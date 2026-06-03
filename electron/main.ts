@@ -1,24 +1,16 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import Database from 'better-sqlite3'
 import { applySchema }       from './database/schema'
 import { getRegiones, createRegion, updateRegionEstado, createSpot } from './database/queries/regiones'
-import { getEspecies, createEspecie }                                 from './database/queries/especies'
-import { getBitacora, createEntrada, updateEntrada, deleteEntrada }   from './database/queries/bitacora'
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
-import fs from 'fs'
-
-// ── Base de datos ─────────────────────────────────────────────────────────────
+import { getEspecies, createEspecie, updateEspecie, deleteEspecie, saveImagenEspecie } from './database/queries/especies'
+import { getBitacora, createEntrada, updateEntrada, deleteEntrada }  from './database/queries/bitacora'
 
 const DB_PATH = path.join(app.getPath('userData'), 'bitacora.db')
 const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')
 applySchema(db)
-
-const IMGS_DIR = path.join(app.getPath('userData'), 'especies-imgs')
-if (!fs.existsSync(IMGS_DIR)) fs.mkdirSync(IMGS_DIR, { recursive: true })
-
-// ── Ventana principal ─────────────────────────────────────────────────────────
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -30,6 +22,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false,
     },
   })
 
@@ -53,25 +46,22 @@ app.on('window-all-closed', () => {
 })
 
 // ── IPC: Bitácora ─────────────────────────────────────────────────────────────
-
 ipcMain.handle('bitacora:getAll',    () => getBitacora(db))
 ipcMain.handle('bitacora:create',    (_e, entrada) => createEntrada(db, entrada))
 ipcMain.handle('bitacora:update',    (_e, id, datos) => updateEntrada(db, id, datos))
 ipcMain.handle('bitacora:delete',    (_e, id) => deleteEntrada(db, id))
 
-// ── IPC: Regiones / Zonas ─────────────────────────────────────────────────────
-
-ipcMain.handle('regiones:getAll',      () => getRegiones(db))
-ipcMain.handle('regiones:create',      (_e, data) => createRegion(db, data))
-ipcMain.handle('regiones:updateEstado',(_e, id, estado) => updateRegionEstado(db, id, estado))
-ipcMain.handle('regiones:createSpot',  (_e, spot) => createSpot(db, spot))
+// ── IPC: Regiones ─────────────────────────────────────────────────────────────
+ipcMain.handle('regiones:getAll',       () => getRegiones(db))
+ipcMain.handle('regiones:create',       (_e, data) => createRegion(db, data))
+ipcMain.handle('regiones:updateEstado', (_e, id, estado) => updateRegionEstado(db, id, estado))
+ipcMain.handle('regiones:createSpot',   (_e, spot) => createSpot(db, spot))
 
 // ── IPC: Especies ─────────────────────────────────────────────────────────────
-
-ipcMain.handle('especies:getAll',  () => getEspecies(db))
-ipcMain.handle('especies:create',  (_e, especie) => createEspecie(db, especie))
-
-ipcMain.handle('app:getUserDataPath', () => app.getPath('userData'))
+ipcMain.handle('especies:getAll',   () => getEspecies(db))
+ipcMain.handle('especies:create',   (_e, especie) => createEspecie(db, especie))
+ipcMain.handle('especies:update',   (_e, id, datos) => updateEspecie(db, id, datos))
+ipcMain.handle('especies:delete',   (_e, id) => deleteEspecie(db, id))
 
 ipcMain.handle('especies:selectImage', async () => {
   const result = await dialog.showOpenDialog({
@@ -84,8 +74,10 @@ ipcMain.handle('especies:selectImage', async () => {
 })
 
 ipcMain.handle('especies:saveImage', (_e, id: string, sourcePath: string) => {
-  const ext = path.extname(sourcePath).toLowerCase() || '.jpg'
-  const dest = path.join(IMGS_DIR, `${id}${ext}`)
-  fs.copyFileSync(sourcePath, dest)
-  return dest
+  const ext = path.extname(sourcePath).toLowerCase().replace('.', '') || 'jpeg'
+  const mime = ext === 'jpg' ? 'jpeg' : ext
+  const buffer = fs.readFileSync(sourcePath)
+  const base64 = `data:image/${mime};base64,${buffer.toString('base64')}`
+  saveImagenEspecie(db, id, base64)
+  return base64
 })

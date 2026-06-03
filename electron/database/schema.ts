@@ -76,7 +76,6 @@ export function applySchema(db: Database) {
   `)
 
   // Migraciones seguras (ALTER TABLE si columna no existe)
-  // Migraciones seguras (ALTER TABLE si columna no existe)
   const migraciones = [
     { tabla: 'regiones', columna: 'descripcion',      tipo: "TEXT DEFAULT ''" },
     { tabla: 'regiones', columna: 'estado',            tipo: "TEXT DEFAULT 'recomendado'" },
@@ -100,6 +99,7 @@ export function applySchema(db: Database) {
     { tabla: 'regiones', columna: 'activo', tipo: 'INTEGER DEFAULT 1' },
     { tabla: 'spots',    columna: 'activo', tipo: 'INTEGER DEFAULT 1' },
     { tabla: 'especies', columna: 'activo', tipo: 'INTEGER DEFAULT 1' },
+    { tabla: 'especies', columna: 'imagen', tipo: "TEXT DEFAULT ''" },
   ]
 
   for (const { tabla, columna, tipo } of migraciones) {

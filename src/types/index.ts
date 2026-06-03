@@ -28,6 +28,7 @@ export interface Especie {
   tecnicas?: string
   cebos?: string
   activo?: boolean
+  imagen?: string
 }
 
 export interface Captura {
@@ -57,31 +58,37 @@ export interface EntradaBitacora {
 }
 
 // ── electronAPI ───────────────────────────────────────────────────────────────
-
 declare global {
   interface Window {
     electronAPI: {
+      app: {
+        getUserDataPath: () => Promise<string>
+      }
       bitacora: {
-        getAll:    ()                                      => Promise<EntradaBitacora[]>
-        create:    (entry: EntradaBitacora)               => Promise<number>
+        getAll:    ()                                           => Promise<EntradaBitacora[]>
+        create:    (entry: EntradaBitacora)                    => Promise<number>
         update:    (id: number, entry: Partial<EntradaBitacora>) => Promise<void>
-        delete:    (id: number)                           => Promise<void>
+        delete:    (id: number)                                => Promise<void>
       }
       regiones: {
-        getAll:        ()                                            => Promise<Region[]>
-        create:        (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
-        updateEstado:  (id: string, estado: string)                  => Promise<void>
-        createSpot:    (spot: {
+        getAll:       ()                                                      => Promise<Region[]>
+        create:       (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
+        updateEstado: (id: string, estado: string)                            => Promise<void>
+        createSpot:   (spot: {
           id: string
           region_id: string
           nombre: string
           tipo?: string
           recomendaciones?: string
-        })                                                           => Promise<void>
+        })                                                                    => Promise<void>
       }
       especies: {
-        getAll:  ()               => Promise<Especie[]>
-        create:  (e: Especie)     => Promise<void>
+        getAll:      ()                              => Promise<Especie[]>
+        create:      (e: Especie)                    => Promise<string>
+        update:      (id: string, e: Partial<Especie>) => Promise<void>
+        delete:      (id: string)                    => Promise<void>
+        selectImage: ()                              => Promise<string | null>
+        saveImage:   (id: string, src: string)       => Promise<string>
       }
     }
   }

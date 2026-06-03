@@ -212,6 +212,14 @@ const EMPTY_FORM: Partial<Especie> = {
   profundidad_min: 0, profundidad_max: 100, activo: true,
 }
 
+const LUNAS = [
+  { value: 'nueva',      label: '🌑 Luna Nueva' },
+  { value: 'creciente',  label: '🌒 Creciente' },
+  { value: 'llena',      label: '🌕 Luna Llena' },
+  { value: 'menguante',  label: '🌘 Menguante' },
+  { value: 'cualquiera', label: '🌙 Cualquiera' },
+]
+
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`bg-ocean-900/60 backdrop-blur-sm border border-white/10 rounded-2xl ${className}`}>
@@ -222,10 +230,10 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function Badge({ text, color = 'ocean' }: { text: string; color?: string }) {
   const colors: Record<string, string> = {
-    ocean:  'bg-ocean-700/50 text-ocean-300 border-white/10',
-    amber:  'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    green:  'bg-green-500/20 text-green-400 border-green-500/30',
-    blue:   'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    ocean: 'bg-ocean-700/50 text-ocean-300 border-white/10',
+    amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    green: 'bg-green-500/20 text-green-400 border-green-500/30',
+    blue:  'bg-blue-500/20 text-blue-400 border-blue-500/30',
   }
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs border ${colors[color] ?? colors.ocean}`}>
@@ -237,34 +245,227 @@ function Badge({ text, color = 'ocean' }: { text: string; color?: string }) {
 // ── Imagen de especie ─────────────────────────────────────────────────────────
 
 function EspecieImg({
-  id, nombre, size = 'md', userDataPath,
+  id, nombre, size = 'md', imagen, contain = false,
 }: {
-  id: string; nombre: string; size?: 'sm' | 'md' | 'lg'; userDataPath?: string
+  id: string; nombre: string; size?: 'sm' | 'md' | 'lg'; imagen?: string; contain?: boolean
 }) {
-  const [srcIndex, setSrcIndex] = useState(0)
-  const sizes = { sm: 'w-12 h-12', md: 'w-20 h-20', lg: 'w-full h-48' }
+  const [srcFailed, setSrcFailed] = useState(false)
+  const sizes = { sm: 'w-12 h-12', md: 'w-20 h-20', lg: 'w-full h-80' }
   const emoji = DATOS_RICOS[id]?.emoji ?? '🐟'
+  const fit = contain ? 'object-contain bg-ocean-950' : 'object-cover'
 
-  const sources = [
-    ...(userDataPath ? [`file://${userDataPath}/especies-imgs/${id}.jpg`] : []),
-    `./assets/especies/${id}.jpg`,
-  ]
+  useEffect(() => { setSrcFailed(false) }, [id, imagen])
 
-  if (srcIndex >= sources.length) {
+  if (imagen) {
+    return <img src={imagen} alt={nombre} className={`${sizes[size]} ${fit} rounded-xl`} />
+  }
+  if (!srcFailed) {
     return (
-      <div className={`${sizes[size]} flex items-center justify-center bg-ocean-800/50 rounded-xl`}>
-        <span className={size === 'lg' ? 'text-6xl' : size === 'md' ? 'text-4xl' : 'text-2xl'}>{emoji}</span>
-      </div>
+      <img src={`./assets/especies/${id}.jpg`} alt={nombre}
+        onError={() => setSrcFailed(true)}
+        className={`${sizes[size]} ${fit} rounded-xl`} />
     )
+  }
+  return (
+    <div className={`${sizes[size]} flex items-center justify-center bg-ocean-800/50 rounded-xl`}>
+      <span className={size === 'lg' ? 'text-6xl' : size === 'md' ? 'text-4xl' : 'text-2xl'}>{emoji}</span>
+    </div>
+  )
+}
+
+// ── Formulario compartido (crear / editar) ────────────────────────────────────
+
+function FormEspecie({ form, setF, imagenPreview, imagenPath, onSeleccionarImagen }: {
+  form: Partial<Especie>
+  setF: (k: keyof Especie, v: any) => void
+  imagenPreview: string | null
+  imagenPath: string | null
+  onSeleccionarImagen: () => void
+}) {
+  return (
+    <div className="space-y-4">
+
+      {/* Imagen */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-ocean-400 font-medium">Imagen</label>
+        <div className="flex items-center gap-3">
+          {imagenPreview ? (
+            <img src={imagenPreview} alt="preview" className="w-20 h-20 object-cover rounded-xl border border-white/10" />
+          ) : (
+            <div className="w-20 h-20 flex items-center justify-center bg-ocean-800/50 rounded-xl border border-dashed border-white/20 text-3xl">🐟</div>
+          )}
+          <button type="button" onClick={onSeleccionarImagen}
+            className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
+            📁 {imagenPath ? 'Cambiar imagen' : 'Adjuntar imagen'}
+          </button>
+        </div>
+        {imagenPath && <p className="text-ocean-500 text-xs truncate">{imagenPath}</p>}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Nombre común *</label>
+        <input value={form.nombre ?? ''} onChange={e => setF('nombre', e.target.value)}
+          placeholder="Ej: Pargo rayado"
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Nombre científico</label>
+        <input value={form.nombre_cientifico ?? ''} onChange={e => setF('nombre_cientifico', e.target.value)}
+          placeholder="Ej: Lutjanus synagris"
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Descripción</label>
+        <textarea value={form.descripcion ?? ''} onChange={e => setF('descripcion', e.target.value)}
+          rows={3} placeholder="Descripción general de la especie..."
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Fase lunar óptima</label>
+        <select value={form.luna_optima ?? 'cualquiera'} onChange={e => setF('luna_optima', e.target.value)}
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
+          {LUNAS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+        </select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-ocean-400 font-medium">Prof. mínima (m)</label>
+          <input type="number" value={form.profundidad_min ?? 0} onChange={e => setF('profundidad_min', Number(e.target.value))}
+            className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-ocean-400 font-medium">Prof. máxima (m)</label>
+          <input type="number" value={form.profundidad_max ?? 100} onChange={e => setF('profundidad_max', Number(e.target.value))}
+            className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Técnicas</label>
+        <input value={form.tecnicas ?? ''} onChange={e => setF('tecnicas', e.target.value)}
+          placeholder="Ej: Fondo, Jigging, Spinning"
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Cebos / Carnadas</label>
+        <input value={form.cebos ?? ''} onChange={e => setF('cebos', e.target.value)}
+          placeholder="Ej: Camarón, calamar, plumas"
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+      </div>
+    </div>
+  )
+}
+
+// ── Modal nueva especie ───────────────────────────────────────────────────────
+
+function ModalNuevaEspecie({ onClose, onGuardar }: {
+  onClose: () => void
+  onGuardar: (e: Partial<Especie>, imagenPath: string | null) => Promise<void>
+}) {
+  const [form, setForm]                   = useState<Partial<Especie>>({ ...EMPTY_FORM })
+  const [guardando, setGuardando]         = useState(false)
+  const [imagenPath, setImagenPath]       = useState<string | null>(null)
+  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
+
+  function setF(k: keyof Especie, v: any) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function seleccionarImagen() {
+    const filePath = await window.electronAPI.especies.selectImage()
+    if (filePath) { setImagenPath(filePath); setImagenPreview(`file://${filePath}`) }
+  }
+
+  async function guardar() {
+    if (!form.nombre) { alert('El nombre es obligatorio.'); return }
+    setGuardando(true)
+    await onGuardar(form, imagenPath)
+    setGuardando(false)
+    onClose()
   }
 
   return (
-    <img
-      src={sources[srcIndex]}
-      alt={nombre}
-      onError={() => setSrcIndex(i => i + 1)}
-      className={`${sizes[size]} object-cover rounded-xl`}
-    />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <h2 className="text-white font-bold text-lg">🐟 Nueva Especie</h2>
+          <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
+        </div>
+        <div className="p-5">
+          <FormEspecie form={form} setF={setF} imagenPreview={imagenPreview} imagenPath={imagenPath} onSeleccionarImagen={seleccionarImagen} />
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t border-white/10">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
+            Cancelar
+          </button>
+          <button onClick={guardar} disabled={guardando}
+            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-ocean-950 font-bold text-sm transition-colors">
+            {guardando ? '⏳ Guardando...' : '💾 Guardar Especie'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal editar especie ──────────────────────────────────────────────────────
+
+function ModalEditarEspecie({ especie, onClose, onGuardar }: {
+  especie: Especie
+  onClose: () => void
+  onGuardar: (id: string, e: Partial<Especie>, imagenPath: string | null) => Promise<void>
+}) {
+  const [form, setForm] = useState<Partial<Especie>>({
+    nombre:            especie.nombre,
+    nombre_cientifico: especie.nombre_cientifico ?? '',
+    descripcion:       especie.descripcion ?? '',
+    luna_optima:       especie.luna_optima ?? 'cualquiera',
+    profundidad_min:   especie.profundidad_min ?? 0,
+    profundidad_max:   especie.profundidad_max ?? 100,
+    tecnicas:          especie.tecnicas ?? '',
+    cebos:             especie.cebos ?? '',
+  })
+  const [guardando, setGuardando]         = useState(false)
+  const [imagenPath, setImagenPath]       = useState<string | null>(null)
+  const [imagenPreview, setImagenPreview] = useState<string | null>(especie.imagen ?? null)
+
+  function setF(k: keyof Especie, v: any) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function seleccionarImagen() {
+    const filePath = await window.electronAPI.especies.selectImage()
+    if (filePath) { setImagenPath(filePath); setImagenPreview(`file://${filePath}`) }
+  }
+
+  async function guardar() {
+    if (!form.nombre) { alert('El nombre es obligatorio.'); return }
+    setGuardando(true)
+    await onGuardar(especie.id!, form, imagenPath)
+    setGuardando(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <h2 className="text-white font-bold text-lg">✏️ Editar Especie</h2>
+          <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
+        </div>
+        <div className="p-5">
+          <FormEspecie form={form} setF={setF} imagenPreview={imagenPreview} imagenPath={imagenPath} onSeleccionarImagen={seleccionarImagen} />
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t border-white/10">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
+            Cancelar
+          </button>
+          <button onClick={guardar} disabled={guardando}
+            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-ocean-950 font-bold text-sm transition-colors">
+            {guardando ? '⏳ Guardando...' : '💾 Guardar Cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -278,10 +479,8 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-
-        {/* Header con imagen */}
         <div className="relative">
-          <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" />
+          <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" imagen={especie.imagen} />
           <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/60 to-transparent rounded-t-2xl" />
           <button onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors">
@@ -294,28 +493,18 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
         </div>
 
         <div className="p-5 space-y-5">
-
-          {/* Badges */}
           <div className="flex flex-wrap gap-2">
             <Badge text={`${lunaIcono} ${especie.luna_optima ?? 'Cualquier fase'}`} color="amber" />
             {datos?.habitat?.map(h => <Badge key={h} text={h} color="blue" />)}
             {datos?.temporada_alta && <Badge text={`📅 ${datos.temporada_alta}`} color="green" />}
           </div>
-
-          {/* Descripción */}
-          {especie.descripcion && (
-            <p className="text-ocean-200 text-sm leading-relaxed">{especie.descripcion}</p>
-          )}
-
-          {/* Comportamiento */}
+          {especie.descripcion && <p className="text-ocean-200 text-sm leading-relaxed">{especie.descripcion}</p>}
           {datos?.comportamiento && (
             <div className="bg-ocean-800/40 rounded-xl p-4">
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-1">🧠 Comportamiento</p>
               <p className="text-ocean-200 text-sm leading-relaxed">{datos.comportamiento}</p>
             </div>
           )}
-
-          {/* Stats de talla y peso */}
           {datos && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
@@ -334,8 +523,6 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
               ))}
             </div>
           )}
-
-          {/* Señuelos */}
           {datos?.colores_senuelos && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🎨 Colores de señuelos efectivos</p>
@@ -344,8 +531,6 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
               </div>
             </div>
           )}
-
-          {/* Técnicas */}
           {datos?.tecnicas && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🎣 Técnicas recomendadas</p>
@@ -354,16 +539,12 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
               </div>
             </div>
           )}
-
-          {/* Cebos de la BD */}
           {especie.cebos && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🪝 Cebos / Carnadas</p>
               <p className="text-ocean-200 text-sm">{especie.cebos}</p>
             </div>
           )}
-
-          {/* Curiosidad */}
           {datos?.curiosidad && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
               <p className="text-amber-400 text-xs font-semibold uppercase mb-1">💡 Sabías que...</p>
@@ -376,165 +557,33 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
   )
 }
 
-// ── Modal nueva especie ───────────────────────────────────────────────────────
-
-function ModalNuevaEspecie({ onClose, onGuardar }: {
-  onClose: () => void
-  onGuardar: (e: Partial<Especie>, imagenPath: string | null) => Promise<void>
-}) {
-  const [form, setForm]           = useState<Partial<Especie>>({ ...EMPTY_FORM })
-  const [guardando, setGuardando] = useState(false)
-  const [imagenPath, setImagenPath] = useState<string | null>(null)
-  const [imagenPreview, setImagenPreview] = useState<string | null>(null)
-
-  function setF(k: keyof Especie, v: any) {
-    setForm(p => ({ ...p, [k]: v }))
-  }
-
-  async function seleccionarImagen() {
-    const filePath = await window.electronAPI.especies.selectImage()
-    if (filePath) {
-      setImagenPath(filePath)
-      setImagenPreview(`file://${filePath}`)
-    }
-  }
-
-  async function guardar() {
-    if (!form.nombre) { alert('El nombre es obligatorio.'); return }
-    setGuardando(true)
-    await onGuardar(form, imagenPath)
-    setGuardando(false)
-    onClose()
-  }
-
-  const LUNAS = [
-    { value: 'nueva',      label: '🌑 Luna Nueva' },
-    { value: 'creciente',  label: '🌒 Creciente' },
-    { value: 'llena',      label: '🌕 Luna Llena' },
-    { value: 'menguante',  label: '🌘 Menguante' },
-    { value: 'cualquiera', label: '🌙 Cualquiera' },
-  ]
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-white font-bold text-lg">🐟 Nueva Especie</h2>
-          <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
-        </div>
-
-        <div className="p-5 space-y-4">
-
-          {/* Imagen */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-ocean-400 font-medium">Imagen</label>
-            <div className="flex items-center gap-3">
-              {imagenPreview ? (
-                <img src={imagenPreview} alt="preview"
-                  className="w-20 h-20 object-cover rounded-xl border border-white/10" />
-              ) : (
-                <div className="w-20 h-20 flex items-center justify-center bg-ocean-800/50 rounded-xl border border-dashed border-white/20 text-3xl">
-                  🐟
-                </div>
-              )}
-              <button type="button" onClick={seleccionarImagen}
-                className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
-                📁 {imagenPath ? 'Cambiar imagen' : 'Adjuntar imagen'}
-              </button>
-            </div>
-            {imagenPath && (
-              <p className="text-ocean-500 text-xs truncate">{imagenPath}</p>
-            )}
-          </div>
-
-          {/* Resto de campos — igual que antes */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Nombre común *</label>
-            <input value={form.nombre ?? ''} onChange={e => setF('nombre', e.target.value)}
-              placeholder="Ej: Pargo rayado"
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Nombre científico</label>
-            <input value={form.nombre_cientifico ?? ''} onChange={e => setF('nombre_cientifico', e.target.value)}
-              placeholder="Ej: Lutjanus synagris"
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Descripción</label>
-            <textarea value={form.descripcion ?? ''} onChange={e => setF('descripcion', e.target.value)}
-              rows={3} placeholder="Descripción general de la especie..."
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Fase lunar óptima</label>
-            <select value={form.luna_optima ?? 'cualquiera'} onChange={e => setF('luna_optima', e.target.value)}
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
-              {LUNAS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-ocean-400 font-medium">Prof. mínima (m)</label>
-              <input type="number" value={form.profundidad_min ?? 0} onChange={e => setF('profundidad_min', Number(e.target.value))}
-                className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-ocean-400 font-medium">Prof. máxima (m)</label>
-              <input type="number" value={form.profundidad_max ?? 100} onChange={e => setF('profundidad_max', Number(e.target.value))}
-                className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Técnicas</label>
-            <input value={form.tecnicas ?? ''} onChange={e => setF('tecnicas', e.target.value)}
-              placeholder="Ej: Fondo, Jigging, Spinning"
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Cebos / Carnadas</label>
-            <input value={form.cebos ?? ''} onChange={e => setF('cebos', e.target.value)}
-              placeholder="Ej: Camarón, calamar, plumas"
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 p-5 border-t border-white/10">
-          <button onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
-            Cancelar
-          </button>
-          <button onClick={guardar} disabled={guardando}
-            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-ocean-950 font-bold text-sm transition-colors">
-            {guardando ? '⏳ Guardando...' : '💾 Guardar Especie'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default function Especies() {
   const { especies, loadAll } = useAppStore()
-  const [busqueda, setBusqueda]       = useState('')
-  const [filtroLuna, setFiltroLuna]   = useState('')
-  const [detalle, setDetalle]         = useState<Especie | null>(null)
-  const [modalNueva, setModalNueva]   = useState(false)
-  const [userDataPath, setUserDataPath] = useState<string>('')
+  const [busqueda, setBusqueda]     = useState('')
+  const [filtroLuna, setFiltroLuna] = useState('')
+  const [detalle, setDetalle]       = useState<Especie | null>(null)
+  const [editando, setEditando]     = useState<Especie | null>(null)
+  const [modalNueva, setModalNueva] = useState(false)
 
-  useEffect(() => {
-    if (especies.length === 0) loadAll()
-    window.electronAPI.app.getUserDataPath().then(setUserDataPath)
-  }, [])
+  useEffect(() => { if (especies.length === 0) loadAll() }, [])
 
   async function guardarNuevaEspecie(nueva: Partial<Especie>, imagenPath: string | null) {
     const id = await window.electronAPI.especies.create(nueva as Especie)
-    if (imagenPath && id) {
-      await window.electronAPI.especies.saveImage(id, imagenPath)
-    }
+    if (imagenPath && id) await window.electronAPI.especies.saveImage(id, imagenPath)
+    await loadAll()
+  }
+
+  async function guardarEdicion(id: string, datos: Partial<Especie>, imagenPath: string | null) {
+    await window.electronAPI.especies.update(id, datos)
+    if (imagenPath) await window.electronAPI.especies.saveImage(id, imagenPath)
+    await loadAll()
+  }
+
+  async function eliminarEspecie(especie: Especie) {
+    if (!confirm(`¿Eliminar "${especie.nombre}"? Esta acción no se puede deshacer.`)) return
+    await window.electronAPI.especies.delete(especie.id!)
     await loadAll()
   }
 
@@ -546,6 +595,14 @@ export default function Especies() {
     { value: 'menguante',  label: '🌘 Menguante' },
     { value: 'cualquiera', label: '🌙 Cualquiera' },
   ]
+
+  const especiesFiltradas = especies.filter(e => {
+    const matchBusq = !busqueda ||
+      e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (e.nombre_cientifico ?? '').toLowerCase().includes(busqueda.toLowerCase())
+    const matchLuna = !filtroLuna || e.luna_optima === filtroLuna
+    return matchBusq && matchLuna
+  })
 
   return (
     <div className="space-y-5">
@@ -591,28 +648,27 @@ export default function Especies() {
           return (
             <Card
               key={especie.id}
-              className="overflow-hidden cursor-pointer hover:border-amber-500/30 hover:bg-ocean-800/60 transition-all duration-200 group"
+              className="overflow-hidden hover:border-amber-500/30 hover:bg-ocean-800/60 transition-all duration-200 group"
             >
+              {/* Imagen clickeable para detalle */}
               <button className="w-full text-left" onClick={() => setDetalle(especie)}>
-                {/* Imagen / emoji header */}
                 <div className="relative">
-                  <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" />
+                  <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" imagen={especie.imagen} />
                   <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-transparent to-transparent" />
-                  {/* Luna badge */}
                   <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1 text-sm">
                     {lunaIcono}
                   </div>
                 </div>
+              </button>
 
-                <div className="p-4">
+              <div className="p-4">
+                <button className="w-full text-left" onClick={() => setDetalle(especie)}>
                   <h3 className="text-white font-bold text-base group-hover:text-amber-400 transition-colors">
                     {especie.nombre}
                   </h3>
                   {especie.nombre_cientifico && (
                     <p className="text-ocean-400 text-xs italic mb-2">{especie.nombre_cientifico}</p>
                   )}
-
-                  {/* Info rápida */}
                   <div className="flex flex-wrap gap-1 mb-3">
                     {datos?.habitat?.slice(0, 2).map(h => (
                       <span key={h} className="px-1.5 py-0.5 rounded-md bg-ocean-700/50 text-ocean-300 text-xs border border-white/10">
@@ -620,10 +676,8 @@ export default function Especies() {
                       </span>
                     ))}
                   </div>
-
-                  {/* Datos clave */}
                   {datos && (
-                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                    <div className="grid grid-cols-2 gap-1.5 text-xs mb-3">
                       <div className="bg-ocean-800/50 rounded-lg px-2 py-1.5">
                         <p className="text-ocean-500">⚖️ Peso prom.</p>
                         <p className="text-white font-semibold">{datos.peso_promedio}</p>
@@ -634,12 +688,24 @@ export default function Especies() {
                       </div>
                     </div>
                   )}
+                </button>
 
-                  <p className="text-amber-400 text-xs mt-3 font-semibold group-hover:text-amber-300">
-                    Ver detalle →
-                  </p>
+                {/* Botones editar / eliminar */}
+                <div className="flex gap-2 pt-2 border-t border-white/5">
+                  <button
+                    onClick={() => setEditando(especie)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-ocean-700/50 hover:bg-ocean-600/50 text-ocean-300 hover:text-white text-xs transition-colors"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    onClick={() => eliminarEspecie(especie)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs transition-colors"
+                  >
+                    🗑️ Eliminar
+                  </button>
                 </div>
-              </button>
+              </div>
             </Card>
           )
         })}
@@ -655,6 +721,13 @@ export default function Especies() {
 
       {/* Modales */}
       {detalle && <ModalDetalle especie={detalle} onClose={() => setDetalle(null)} />}
+      {editando && (
+        <ModalEditarEspecie
+          especie={editando}
+          onClose={() => setEditando(null)}
+          onGuardar={guardarEdicion}
+        />
+      )}
       {modalNueva && (
         <ModalNuevaEspecie
           onClose={() => setModalNueva(false)}
