@@ -4,7 +4,10 @@ export function getEspecies(db: Database) {
   return db.prepare(`
     SELECT id, nombre, nombre_cientifico, descripcion,
            luna_optima, profundidad_min, profundidad_max,
-           tecnicas, cebos, activo, imagen
+           tecnicas, cebos, activo, imagen,
+           peso_promedio, peso_maximo, talla_promedio, talla_maxima,
+           record_colombia, profundidad_detalle, habitat,
+           temporada_alta, comportamiento, colores_senuelos, curiosidad
     FROM especies
     WHERE activo = 1
     ORDER BY nombre
@@ -20,6 +23,17 @@ export function createEspecie(db: Database, e: {
   profundidad_max?: number
   tecnicas?: string
   cebos?: string
+  peso_promedio?: string
+  peso_maximo?: string
+  talla_promedio?: string
+  talla_maxima?: string
+  record_colombia?: string
+  profundidad_detalle?: string
+  habitat?: string
+  temporada_alta?: string
+  comportamiento?: string
+  colores_senuelos?: string
+  curiosidad?: string
 }) {
   const id = e.nombre
     .toLowerCase()
@@ -29,20 +43,28 @@ export function createEspecie(db: Database, e: {
     .replace(/[^a-z0-9_]/g, '')
 
   db.prepare(`
-    INSERT OR REPLACE INTO especies
-      (id, nombre, nombre_cientifico, descripcion, luna_optima,
-       profundidad_min, profundidad_max, tecnicas, cebos, activo, imagen)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, '')
+    INSERT OR REPLACE INTO especies (
+      id, nombre, nombre_cientifico, descripcion,
+      luna_optima, profundidad_min, profundidad_max,
+      tecnicas, cebos, activo, imagen,
+      peso_promedio, peso_maximo, talla_promedio, talla_maxima,
+      record_colombia, profundidad_detalle, habitat,
+      temporada_alta, comportamiento, colores_senuelos, curiosidad
+    ) VALUES (
+      ?, ?, ?, ?,
+      ?, ?, ?,
+      ?, ?, 1, '',
+      ?, ?, ?, ?,
+      ?, ?, ?,
+      ?, ?, ?, ?
+    )
   `).run(
-    id,
-    e.nombre,
-    e.nombre_cientifico ?? '',
-    e.descripcion ?? '',
-    e.luna_optima ?? 'cualquiera',
-    e.profundidad_min ?? 0,
-    e.profundidad_max ?? 100,
-    e.tecnicas ?? '',
-    e.cebos ?? '',
+    id, e.nombre, e.nombre_cientifico ?? '', e.descripcion ?? '',
+    e.luna_optima ?? 'cualquiera', e.profundidad_min ?? 0, e.profundidad_max ?? 100,
+    e.tecnicas ?? '', e.cebos ?? '',
+    e.peso_promedio ?? '', e.peso_maximo ?? '', e.talla_promedio ?? '', e.talla_maxima ?? '',
+    e.record_colombia ?? '', e.profundidad_detalle ?? '', e.habitat ?? '',
+    e.temporada_alta ?? '', e.comportamiento ?? '', e.colores_senuelos ?? '', e.curiosidad ?? '',
   )
   return id
 }
@@ -56,27 +78,47 @@ export function updateEspecie(db: Database, id: string, e: {
   profundidad_max?: number
   tecnicas?: string
   cebos?: string
+  peso_promedio?: string
+  peso_maximo?: string
+  talla_promedio?: string
+  talla_maxima?: string
+  record_colombia?: string
+  profundidad_detalle?: string
+  habitat?: string
+  temporada_alta?: string
+  comportamiento?: string
+  colores_senuelos?: string
+  curiosidad?: string
 }) {
   db.prepare(`
     UPDATE especies SET
-      nombre            = ?,
-      nombre_cientifico = ?,
-      descripcion       = ?,
-      luna_optima       = ?,
-      profundidad_min   = ?,
-      profundidad_max   = ?,
-      tecnicas          = ?,
-      cebos             = ?
+      nombre              = ?,
+      nombre_cientifico   = ?,
+      descripcion         = ?,
+      luna_optima         = ?,
+      profundidad_min     = ?,
+      profundidad_max     = ?,
+      tecnicas            = ?,
+      cebos               = ?,
+      peso_promedio       = ?,
+      peso_maximo         = ?,
+      talla_promedio      = ?,
+      talla_maxima        = ?,
+      record_colombia     = ?,
+      profundidad_detalle = ?,
+      habitat             = ?,
+      temporada_alta      = ?,
+      comportamiento      = ?,
+      colores_senuelos    = ?,
+      curiosidad          = ?
     WHERE id = ?
   `).run(
-    e.nombre ?? '',
-    e.nombre_cientifico ?? '',
-    e.descripcion ?? '',
-    e.luna_optima ?? 'cualquiera',
-    e.profundidad_min ?? 0,
-    e.profundidad_max ?? 100,
-    e.tecnicas ?? '',
-    e.cebos ?? '',
+    e.nombre ?? '', e.nombre_cientifico ?? '', e.descripcion ?? '',
+    e.luna_optima ?? 'cualquiera', e.profundidad_min ?? 0, e.profundidad_max ?? 100,
+    e.tecnicas ?? '', e.cebos ?? '',
+    e.peso_promedio ?? '', e.peso_maximo ?? '', e.talla_promedio ?? '', e.talla_maxima ?? '',
+    e.record_colombia ?? '', e.profundidad_detalle ?? '', e.habitat ?? '',
+    e.temporada_alta ?? '', e.comportamiento ?? '', e.colores_senuelos ?? '', e.curiosidad ?? '',
     id,
   )
 }

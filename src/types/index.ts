@@ -1,5 +1,3 @@
-// ── Entidades principales ─────────────────────────────────────────────────────
-
 export interface Spot {
   id: string
   region_id: string
@@ -14,6 +12,8 @@ export interface Region {
   nombre: string
   descripcion?: string
   estado?: 'explorado' | 'recomendado'
+  lat?: number
+  lon?: number
   spots: Spot[]
 }
 
@@ -29,6 +29,18 @@ export interface Especie {
   cebos?: string
   activo?: boolean
   imagen?: string
+  // Campos ricos
+  peso_promedio?: string
+  peso_maximo?: string
+  talla_promedio?: string
+  talla_maxima?: string
+  record_colombia?: string
+  profundidad_detalle?: string
+  habitat?: string
+  temporada_alta?: string
+  comportamiento?: string
+  colores_senuelos?: string
+  curiosidad?: string
 }
 
 export interface Captura {
@@ -57,7 +69,6 @@ export interface EntradaBitacora {
   capturas?: Captura[]
 }
 
-// ── electronAPI ───────────────────────────────────────────────────────────────
 declare global {
   interface Window {
     electronAPI: {
@@ -65,30 +76,33 @@ declare global {
         getUserDataPath: () => Promise<string>
       }
       bitacora: {
-        getAll:    ()                                           => Promise<EntradaBitacora[]>
-        create:    (entry: EntradaBitacora)                    => Promise<number>
+        getAll:    ()                                             => Promise<EntradaBitacora[]>
+        create:    (entry: EntradaBitacora)                      => Promise<number>
         update:    (id: number, entry: Partial<EntradaBitacora>) => Promise<void>
-        delete:    (id: number)                                => Promise<void>
+        delete:    (id: number)                                  => Promise<void>
       }
       regiones: {
-        getAll:       ()                                                      => Promise<Region[]>
-        create:       (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
-        updateEstado: (id: string, estado: string)                            => Promise<void>
-        createSpot:   (spot: {
-          id: string
-          region_id: string
+        getAll:       ()                                                        => Promise<Region[]>
+        create:       (data: {
           nombre: string
-          tipo?: string
-          recomendaciones?: string
-        })                                                                    => Promise<void>
+          descripcion?: string
+          estado?: string
+          lat?: number
+          lon?: number
+        }) => Promise<void>
+        updateEstado: (id: string, estado: string)                              => Promise<void>
+        createSpot:   (spot: {
+          id: string; region_id: string; nombre: string
+          tipo?: string; recomendaciones?: string
+        }) => Promise<void>
       }
       especies: {
-        getAll:      ()                              => Promise<Especie[]>
-        create:      (e: Especie)                    => Promise<string>
+        getAll:      ()                               => Promise<Especie[]>
+        create:      (e: Especie)                     => Promise<string>
         update:      (id: string, e: Partial<Especie>) => Promise<void>
-        delete:      (id: string)                    => Promise<void>
-        selectImage: ()                              => Promise<string | null>
-        saveImage:   (id: string, src: string)       => Promise<string>
+        delete:      (id: string)                     => Promise<void>
+        selectImage: ()                               => Promise<string | null>
+        saveImage:   (id: string, src: string)        => Promise<string>
       }
     }
   }

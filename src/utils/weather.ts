@@ -110,73 +110,71 @@ function precipitacionAClaridad(precip: number, nubes: number): 'Clara' | 'Media
 }
 
 /** Obtiene datos meteorológicos reales de Open-Meteo con fallback estacional */
-export async function getDatosClimaticos(fecha: Date = new Date()): Promise<DatosClimaticos> {
-  const LAT = 9.5
-  const LON = -75.9
-
+export async function getDatosClimaticos(
+  fecha: Date = new Date(),
+  lat: number = 9.5,
+  lon: number = -75.9
+): Promise<DatosClimaticos> {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?` +
-      `latitude=${LAT}&longitude=${LON}` +
+      `latitude=${lat}&longitude=${lon}` +
       `&current=temperature_2m,relative_humidity_2m,precipitation,cloud_cover,` +
       `wind_speed_10m,wind_direction_10m,surface_pressure,visibility` +
-      `&hourly=wave_height&daily=wave_height_max` +
+      `&daily=wave_height_max` +
       `&wind_speed_unit=kmh&timezone=America%2FBogota&forecast_days=1`
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5000) // 5s timeout
-
+    const timeout = setTimeout(() => controller.abort(), 5000)
     const resp = await fetch(url, { signal: controller.signal })
     clearTimeout(timeout)
-
     if (!resp.ok) throw new Error('HTTP error')
 
     const data = await resp.json()
     const c = data.current
 
-    const velocidad = c.wind_speed_10m ?? 0
-    const direccion = c.wind_direction_10m ?? 0
+    const velocidad    = c.wind_speed_10m ?? 0
+    const direccion    = c.wind_direction_10m ?? 0
     const precipitacion = c.precipitation ?? 0
-    const nubes = c.cloud_cover ?? 0
-    const alturaOlas = data.daily?.wave_height_max?.[0] ?? 0.4
+    const nubes        = c.cloud_cover ?? 0
+    const alturaOlas   = data.daily?.wave_height_max?.[0] ?? 0.4
 
     return {
-      temperaturaAgua: getDatosEstacionales(fecha).temperaturaAgua ?? 28,
-      temperaturaAire: Math.round(c.temperature_2m ?? 30),
-      vientoVelocidad: Math.round(velocidad),
-      vientoDireccion: Math.round(direccion),
+      temperaturaAgua:      getDatosEstacionales(fecha).temperaturaAgua ?? 28,
+      temperaturaAire:      Math.round(c.temperature_2m ?? 30),
+      vientoVelocidad:      Math.round(velocidad),
+      vientoDireccion:      Math.round(direccion),
       vientoDireccionTexto: gradosADireccion(direccion),
-      humedadRelativa: Math.round(c.relative_humidity_2m ?? 75),
-      precipitacion: Math.round(precipitacion * 10) / 10,
-      coberturaNubes: Math.round(nubes),
-      visibilidad: Math.round((c.visibility ?? 10000) / 1000),
-      presionAtmosferica: Math.round(c.surface_pressure ?? 1013),
-      alturaOlas: Math.round(alturaOlas * 10) / 10,
-      estadoMar: alturaOlasAEstado(alturaOlas),
-      claridad: precipitacionAClaridad(precipitacion, nubes),
-      condicionGeneral: nubes > 70 ? 'Nublado' : nubes > 40 ? 'Parcialmente nublado' : 'Despejado',
-      fuenteDatos: 'api',
-      ultimaActualizacion: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+      humedadRelativa:      Math.round(c.relative_humidity_2m ?? 75),
+      precipitacion:        Math.round(precipitacion * 10) / 10,
+      coberturaNubes:       Math.round(nubes),
+      visibilidad:          Math.round((c.visibility ?? 10000) / 1000),
+      presionAtmosferica:   Math.round(c.surface_pressure ?? 1013),
+      alturaOlas:           Math.round(alturaOlas * 10) / 10,
+      estadoMar:            alturaOlasAEstado(alturaOlas),
+      claridad:             precipitacionAClaridad(precipitacion, nubes),
+      condicionGeneral:     nubes > 70 ? 'Nublado' : nubes > 40 ? 'Parcialmente nublado' : 'Despejado',
+      fuenteDatos:          'api',
+      ultimaActualizacion:  new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
     }
   } catch {
-    // Fallback a datos estacionales
     const estimado = getDatosEstacionales(fecha)
     return {
-      temperaturaAgua: estimado.temperaturaAgua ?? 28,
-      temperaturaAire: estimado.temperaturaAire ?? 30,
-      vientoVelocidad: estimado.vientoVelocidad ?? 15,
-      vientoDireccion: estimado.vientoDireccion ?? 45,
+      temperaturaAgua:      estimado.temperaturaAgua ?? 28,
+      temperaturaAire:      estimado.temperaturaAire ?? 30,
+      vientoVelocidad:      estimado.vientoVelocidad ?? 15,
+      vientoDireccion:      estimado.vientoDireccion ?? 45,
       vientoDireccionTexto: estimado.vientoDireccionTexto ?? 'NE',
-      humedadRelativa: 78,
-      precipitacion: estimado.precipitacion ?? 5,
-      coberturaNubes: estimado.coberturaNubes ?? 30,
-      visibilidad: 10,
-      presionAtmosferica: 1013,
-      alturaOlas: estimado.alturaOlas ?? 0.5,
-      estadoMar: estimado.estadoMar ?? 'Poco agitado',
-      claridad: estimado.claridad ?? 'Clara',
-      condicionGeneral: estimado.condicionGeneral ?? 'Datos estimados por temporada',
-      fuenteDatos: 'estimado',
-      ultimaActualizacion: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+      humedadRelativa:      78,
+      precipitacion:        estimado.precipitacion ?? 5,
+      coberturaNubes:       estimado.coberturaNubes ?? 30,
+      visibilidad:          10,
+      presionAtmosferica:   1013,
+      alturaOlas:           estimado.alturaOlas ?? 0.5,
+      estadoMar:            estimado.estadoMar ?? 'Poco agitado',
+      claridad:             estimado.claridad ?? 'Clara',
+      condicionGeneral:     estimado.condicionGeneral ?? 'Datos estimados por temporada',
+      fuenteDatos:          'estimado',
+      ultimaActualizacion:  new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
     }
   }
 }

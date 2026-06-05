@@ -2,28 +2,39 @@ import type { Database } from 'better-sqlite3'
 
 export function getRegiones(db: Database) {
   const regiones = db.prepare(`
-    SELECT id, nombre, descripcion, estado FROM regiones WHERE activo = 1 ORDER BY nombre
+    SELECT id, nombre, descripcion, estado, lat, lon
+    FROM regiones WHERE activo = 1 ORDER BY nombre
   `).all() as any[]
 
   const spots = db.prepare(`
-    SELECT id, region_id, nombre, tipo, recomendaciones FROM spots WHERE activo = 1 ORDER BY nombre
+    SELECT id, region_id, nombre, tipo, recomendaciones
+    FROM spots WHERE activo = 1 ORDER BY nombre
   `).all() as any[]
 
   return regiones.map(r => ({
     ...r,
+    lat: r.lat ?? 0,
+    lon: r.lon ?? 0,
     spots: spots.filter(s => s.region_id === r.id),
   }))
 }
 
 export function createRegion(
   db: Database,
-  data: { nombre: string; descripcion?: string; estado?: string }
+  data: { nombre: string; descripcion?: string; estado?: string; lat?: number; lon?: number }
 ) {
   const id = `region_${Date.now()}`
   db.prepare(`
-    INSERT INTO regiones (id, nombre, descripcion, estado, activo)
-    VALUES (?, ?, ?, ?, 1)
-  `).run(id, data.nombre, data.descripcion ?? '', data.estado ?? 'recomendado')
+    INSERT INTO regiones (id, nombre, descripcion, estado, lat, lon, activo)
+    VALUES (?, ?, ?, ?, ?, ?, 1)
+  `).run(
+    id,
+    data.nombre,
+    data.descripcion ?? '',
+    data.estado ?? 'recomendado',
+    data.lat ?? 0,
+    data.lon ?? 0,
+  )
   return id
 }
 

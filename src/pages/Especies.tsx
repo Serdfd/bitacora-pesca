@@ -3,222 +3,41 @@ import { useAppStore } from '@/store'
 import { getIconoFase } from '@/utils/moon'
 import type { Especie } from '@/types'
 
-// ── Datos enriquecidos por especie ────────────────────────────────────────────
+const LUNAS = [
+  { value: 'nueva',               label: '🌑 Luna Nueva' },
+  { value: 'creciente_creciente', label: '🌒 Creciente' },
+  { value: 'cuarto_creciente',    label: '🌓 Cuarto Creciente' },
+  { value: 'gibosa_creciente',    label: '🌔 Gibosa Creciente' },
+  { value: 'llena',               label: '🌕 Luna Llena' },
+  { value: 'gibosa_menguante',    label: '🌖 Gibosa Menguante' },
+  { value: 'cuarto_menguante',    label: '🌗 Cuarto Menguante' },
+  { value: 'creciente_menguante', label: '🌘 Menguante' },
+  { value: 'cualquiera',          label: '🌙 Cualquiera' },
+]
 
-interface DatosRicos {
-  emoji: string
-  peso_promedio: string
-  peso_maximo: string
-  talla_promedio: string
-  talla_maxima: string
-  record_colombia: string
-  profundidad: string
-  habitat: string[]
-  temporada_alta: string
-  comportamiento: string
-  colores_senuelos: string[]
-  tecnicas: string[]
-  curiosidad: string
-}
-
-const DATOS_RICOS: Record<string, DatosRicos> = {
-  carite: {
-    emoji: '🐟',
-    peso_promedio: '3–8 kg', peso_maximo: '45 kg',
-    talla_promedio: '60–90 cm', talla_maxima: '185 cm',
-    record_colombia: '~20 kg',
-    profundidad: '0–100 m (superficie preferida)',
-    habitat: ['Pelágico', 'Arrecife'],
-    temporada_alta: 'Dic – Mar (época seca, alisios)',
-    comportamiento: 'Depredador veloz en cardumen. Ataca carnadas en superficie con saltos. Muy activo al amanecer y atardecer. Sigue corrientes cálidas.',
-    colores_senuelos: ['Azul/Blanco', 'Verde/Amarillo', 'Plateado', 'Natural/Transparente'],
-    tecnicas: ['Trolling', 'Spinning', 'Curricán'],
-    curiosidad: 'Puede alcanzar velocidades de hasta 65 km/h. Excelente para ceviche.',
-  },
-  sierra: {
-    emoji: '🐡',
-    peso_promedio: '2–5 kg', peso_maximo: '38 kg',
-    talla_promedio: '50–80 cm', talla_maxima: '200 cm',
-    record_colombia: '~15 kg',
-    profundidad: '0–200 m',
-    habitat: ['Pelágico', 'Costero'],
-    temporada_alta: 'Nov – Feb',
-    comportamiento: 'Solitaria o en parejas. Más lenta que el carite pero con dientes peligrosos. Ataca con movimiento lateral cortando la carnada.',
-    colores_senuelos: ['Rojo/Blanco', 'Naranja', 'Plateado', 'Azul/Blanco'],
-    tecnicas: ['Trolling', 'Spinning'],
-    curiosidad: 'Sus dientes son tan afilados que puede cortar el hilo de pesca. Recomendable usar acero.',
-  },
-  dorado: {
-    emoji: '🐠',
-    peso_promedio: '4–10 kg', peso_maximo: '40 kg',
-    talla_promedio: '70–100 cm', talla_maxima: '210 cm',
-    record_colombia: '~25 kg',
-    profundidad: '0–85 m (superficie)',
-    habitat: ['Pelágico oceánico'],
-    temporada_alta: 'Abr – Jul',
-    comportamiento: 'Uno de los peces más rápidos del mar. Vive cerca de objetos flotantes (palos, sargazo). Cambia de color dramáticamente al morir. Excelente saltador.',
-    colores_senuelos: ['Amarillo/Dorado', 'Azul/Blanco', 'Verde/Amarillo', 'Multicolor'],
-    tecnicas: ['Trolling', 'Spinning', 'Jigging'],
-    curiosidad: 'El macho tiene la cabeza muy cuadrada (toro). La hembra la tiene redondeada (vaca). Crecen increíblemente rápido — 1 kg por mes.',
-  },
-  wahoo: {
-    emoji: '🐟',
-    peso_promedio: '8–15 kg', peso_maximo: '83 kg',
-    talla_promedio: '100–150 cm', talla_maxima: '250 cm',
-    record_colombia: '~35 kg',
-    profundidad: '0–150 m',
-    habitat: ['Pelágico oceánico'],
-    temporada_alta: 'Ene – Mar',
-    comportamiento: 'Uno de los peces más rápidos del océano (~80 km/h). Solitario o en parejas. Ataca con explosividad brutal. Prefiere aguas cálidas y profundas.',
-    colores_senuelos: ['Azul/Blanco', 'Rosa/Blanco', 'Plateado', 'Multicolor'],
-    tecnicas: ['Trolling de alta velocidad', 'Spinning'],
-    curiosidad: 'Su nombre viene del hawaiano "wahoo". A alta velocidad puede cortar el hilo como una navaja.',
-  },
-  pargo_rojo: {
-    emoji: '🐟',
-    peso_promedio: '2–5 kg', peso_maximo: '22 kg',
-    talla_promedio: '40–70 cm', talla_maxima: '100 cm',
-    record_colombia: '~10 kg',
-    profundidad: '10–200 m (fondo preferido)',
-    habitat: ['Arrecife', 'Fondo rocoso'],
-    temporada_alta: 'Todo el año (mejor en luna nueva)',
-    comportamiento: 'Especie de fondo, muy territorial. Vive en arrecifes y estructuras rocosas. Nocturno en alimentación. Muy apetecido por su sabor.',
-    colores_senuelos: ['Rojo/Blanco', 'Naranja', 'Amarillo/Dorado', 'Natural/Transparente'],
-    tecnicas: ['Fondo', 'Jigging', 'Cuchareo'],
-    curiosidad: 'Es la especie más representativa de la pesca artesanal del Caribe colombiano. Altamente cotizado en restaurantes.',
-  },
-  pargo_lunarejo: {
-    emoji: '🐟',
-    peso_promedio: '1–3 kg', peso_maximo: '12 kg',
-    talla_promedio: '30–55 cm', talla_maxima: '80 cm',
-    record_colombia: '~6 kg',
-    profundidad: '5–80 m',
-    habitat: ['Arrecife', 'Manglar'],
-    temporada_alta: 'May – Sep',
-    comportamiento: 'Especie gregaria, vive en cardúmenes en arrecifes de coral. Tiene una mancha negra característica en el lomo. Muy activo de noche.',
-    colores_senuelos: ['Rojo/Blanco', 'Amarillo/Dorado', 'Rosa/Blanco'],
-    tecnicas: ['Fondo', 'Cuchareo', 'Jigging ligero'],
-    curiosidad: 'Se reconoce fácilmente por la mancha oscura detrás de la aleta dorsal. Excelente para comer asado.',
-  },
-  pargo_cubera: {
-    emoji: '🐟',
-    peso_promedio: '5–15 kg', peso_maximo: '57 kg',
-    talla_promedio: '60–100 cm', talla_maxima: '160 cm',
-    record_colombia: '~25 kg',
-    profundidad: '5–55 m',
-    habitat: ['Arrecife', 'Fondo rocoso profundo'],
-    temporada_alta: 'Jun – Sep',
-    comportamiento: 'El pargo más grande del Atlántico. Solitario y muy territorial. Protege su zona agresivamente. Extremadamente fuerte al picar.',
-    colores_senuelos: ['Rojo/Blanco', 'Naranja', 'Natural/Transparente'],
-    tecnicas: ['Fondo profundo', 'Jigging pesado'],
-    curiosidad: 'Puede vivir más de 55 años. Es tan fuerte que puede romper anzuelos de acero inoxidable.',
-  },
-  mero: {
-    emoji: '🐡',
-    peso_promedio: '3–10 kg', peso_maximo: '100 kg',
-    talla_promedio: '50–90 cm', talla_maxima: '270 cm',
-    record_colombia: '~40 kg',
-    profundidad: '5–100 m',
-    habitat: ['Arrecife', 'Fondo rocoso', 'Cuevas'],
-    temporada_alta: 'Todo el año',
-    comportamiento: 'Hermafrodita protogínica — nace hembra y puede cambiar a macho. Depredador de emboscada. Muy sedentario. Atrae a sus presas hacia cuevas.',
-    colores_senuelos: ['Naranja', 'Rojo/Blanco', 'Natural/Transparente'],
-    tecnicas: ['Fondo', 'Jigging', 'Carnada viva'],
-    curiosidad: 'Todos los meros nacen hembras. Los más grandes son machos. Puede pesar más de 200 kg en especies gigantes.',
-  },
-  mero_negro: {
-    emoji: '🐡',
-    peso_promedio: '5–20 kg', peso_maximo: '180 kg',
-    talla_promedio: '70–120 cm', talla_maxima: '240 cm',
-    record_colombia: '~60 kg',
-    profundidad: '20–150 m',
-    habitat: ['Arrecife profundo', 'Fondo rocoso'],
-    temporada_alta: 'Oct – Feb',
-    comportamiento: 'Mero de aguas profundas. Oscuro y robusto. Espera en cuevas para emboscar presas. Muy fuerte en el combate.',
-    colores_senuelos: ['Negro', 'Rojo/Blanco', 'Natural/Transparente'],
-    tecnicas: ['Fondo profundo', 'Jigging pesado'],
-    curiosidad: 'Su color oscuro lo camufla perfectamente en arrecifes profundos. Muy apreciado por pescadores deportivos.',
-  },
-  robalo: {
-    emoji: '🐟',
-    peso_promedio: '1–4 kg', peso_maximo: '20 kg',
-    talla_promedio: '40–70 cm', talla_maxima: '140 cm',
-    record_colombia: '~8 kg',
-    profundidad: '0–20 m (estuarios y costa)',
-    habitat: ['Manglar', 'Estuario', 'Costa rocosa'],
-    temporada_alta: 'May – Ago',
-    comportamiento: 'Depredador costero y de manglar. Muy popular en pesca deportiva por sus saltos espectaculares. Activo en corrientes y entradas de agua dulce.',
-    colores_senuelos: ['Plateado', 'Natural/Transparente', 'Azul/Blanco', 'Verde/Amarillo'],
-    tecnicas: ['Spinning', 'Mosca', 'Señuelos de superficie'],
-    curiosidad: 'Considerado el "rey del manglar". Sus saltos al picar son espectaculares. Muy combativo para su tamaño.',
-  },
-  jurel: {
-    emoji: '🐟',
-    peso_promedio: '2–6 kg', peso_maximo: '35 kg',
-    talla_promedio: '40–70 cm', talla_maxima: '170 cm',
-    record_colombia: '~15 kg',
-    profundidad: '0–80 m',
-    habitat: ['Pelágico', 'Arrecife'],
-    temporada_alta: 'Dic – Mar',
-    comportamiento: 'Especie en cardumen. Muy agresivo y veloz. Excelente para pesca deportiva. Suele rodear cardúmenes de peces pequeños desde abajo.',
-    colores_senuelos: ['Plateado', 'Azul/Blanco', 'Verde/Amarillo', 'Amarillo/Dorado'],
-    tecnicas: ['Jigging', 'Spinning', 'Trolling'],
-    curiosidad: 'Tiene una línea lateral rígida que lo hace muy resistente. Excelente para pesca de jigging vertical.',
-  },
-  barracuda: {
-    emoji: '🦈',
-    peso_promedio: '3–8 kg', peso_maximo: '45 kg',
-    talla_promedio: '60–100 cm', talla_maxima: '200 cm',
-    record_colombia: '~20 kg',
-    profundidad: '0–100 m',
-    habitat: ['Arrecife', 'Pelágico costero'],
-    temporada_alta: 'Todo el año',
-    comportamiento: 'Predadora solitaria y curiosa. Se acerca a buzos y nadadores por curiosidad. Ataque relámpago con dientes enormes. Muy agresiva con señuelos brillantes.',
-    colores_senuelos: ['Plateado', 'Azul/Blanco', 'Multicolor'],
-    tecnicas: ['Trolling', 'Spinning', 'Señuelos metálicos'],
-    curiosidad: 'Sus dientes son tan afilados como cuchillas quirúrgicas. Puede causar ciguatera si se come — verificar la zona antes de consumirla.',
-  },
-  corvina: {
-    emoji: '🐟',
-    peso_promedio: '1–3 kg', peso_maximo: '15 kg',
-    talla_promedio: '35–60 cm', talla_maxima: '100 cm',
-    record_colombia: '~7 kg',
-    profundidad: '5–50 m (fondos arenosos)',
-    habitat: ['Fondo arenoso', 'Estuario', 'Costa'],
-    temporada_alta: 'Mar – Jun',
-    comportamiento: 'Especie de fondo en zonas arenosas. Nocturna. Se alimenta de crustáceos y peces pequeños. Produce sonidos con la vejiga natatoria.',
-    colores_senuelos: ['Natural/Transparente', 'Amarillo/Dorado', 'Rojo/Blanco'],
-    tecnicas: ['Fondo', 'Cuchareo', 'Carnada natural'],
-    curiosidad: 'Produce sonidos tipo "croack" con la vejiga natatoria. Por eso su nombre en inglés es "drum".',
-  },
-  sabalo: {
-    emoji: '🐟',
-    peso_promedio: '10–30 kg', peso_maximo: '161 kg',
-    talla_promedio: '100–180 cm', talla_maxima: '250 cm',
-    record_colombia: '~80 kg',
-    profundidad: '0–30 m (superficie)',
-    habitat: ['Estuario', 'Costa', 'Agua salobre'],
-    temporada_alta: 'Abr – Jul',
-    comportamiento: 'El pez más acrobático del Caribe. Salta repetidamente al picar, puede alcanzar 3 metros de altura. Prácticamente siempre se libera (poca calidad para comer).',
-    colores_senuelos: ['Plateado', 'Natural/Transparente', 'Azul/Blanco'],
-    tecnicas: ['Spinning', 'Mosca', 'Curricán'],
-    curiosidad: 'El rey de la pesca deportiva. Sus escamas plateadas gigantes son icónicas. Puede respirar aire atmosférico directamente.',
-  },
-}
+const LUNAS_FILTRO = [
+  { value: '',                    label: '🌙 Todas las fases' },
+  { value: 'nueva',               label: '🌑 Luna Nueva' },
+  { value: 'creciente_creciente', label: '🌒 Creciente' },
+  { value: 'llena',               label: '🌕 Luna Llena' },
+  { value: 'creciente_menguante', label: '🌘 Menguante' },
+  { value: 'cualquiera',          label: '🌙 Cualquiera' },
+]
 
 const EMPTY_FORM: Partial<Especie> = {
   nombre: '', nombre_cientifico: '', descripcion: '',
-  luna_optima: 'cualquiera', cebos: '', tecnicas: '',
-  profundidad_min: 0, profundidad_max: 100, activo: true,
+  luna_optima: 'cualquiera',
+  profundidad_min: 0, profundidad_max: 100,
+  tecnicas: '', cebos: '',
+  peso_promedio: '', peso_maximo: '',
+  talla_promedio: '', talla_maxima: '',
+  record_colombia: '', profundidad_detalle: '',
+  habitat: '', temporada_alta: '',
+  comportamiento: '', colores_senuelos: '', curiosidad: '',
+  activo: true,
 }
 
-const LUNAS = [
-  { value: 'nueva',      label: '🌑 Luna Nueva' },
-  { value: 'creciente',  label: '🌒 Creciente' },
-  { value: 'llena',      label: '🌕 Luna Llena' },
-  { value: 'menguante',  label: '🌘 Menguante' },
-  { value: 'cualquiera', label: '🌙 Cualquiera' },
-]
+// ── Componentes UI reutilizables ──────────────────────────────────────────────
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -242,33 +61,62 @@ function Badge({ text, color = 'ocean' }: { text: string; color?: string }) {
   )
 }
 
-// ── Imagen de especie ─────────────────────────────────────────────────────────
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className="text-xs text-ocean-400 font-medium">{children}</label>
+}
 
-function EspecieImg({
-  id, nombre, size = 'md', imagen, contain = false,
-}: {
-  id: string; nombre: string; size?: 'sm' | 'md' | 'lg'; imagen?: string; contain?: boolean
+function TextInput({ label, value, onChange, placeholder = '' }: {
+  label: string; value: string; placeholder?: string
+  onChange: (v: string) => void
 }) {
-  const [srcFailed, setSrcFailed] = useState(false)
-  const sizes = { sm: 'w-12 h-12', md: 'w-20 h-20', lg: 'w-full h-80' }
-  const emoji = DATOS_RICOS[id]?.emoji ?? '🐟'
-  const fit = contain ? 'object-contain bg-ocean-950' : 'object-cover'
+  return (
+    <div className="flex flex-col gap-1">
+      <FieldLabel>{label}</FieldLabel>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 transition-colors" />
+    </div>
+  )
+}
 
-  useEffect(() => { setSrcFailed(false) }, [id, imagen])
+function TextArea({ label, value, onChange, placeholder = '', rows = 3 }: {
+  label: string; value: string; placeholder?: string; rows?: number
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <FieldLabel>{label}</FieldLabel>
+      <textarea value={value} onChange={e => onChange(e.target.value)}
+        placeholder={placeholder} rows={rows}
+        className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors" />
+    </div>
+  )
+}
 
-  if (imagen) {
-    return <img src={imagen} alt={nombre} className={`${sizes[size]} ${fit} rounded-xl`} />
-  }
-  if (!srcFailed) {
+// ── Imagen de especie ─────────────────────────────────────────────────────────
+function EspecieImg({ id, nombre, size = 'md', imagen }: {
+  id: string; nombre: string; size?: 'sm' | 'md' | 'lg'; imagen?: string
+}) {
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => { setFailed(false) }, [id, imagen])
+
+  const src = imagen || (!failed ? `./assets/especies/${id}.jpg` : null)
+  const emojiSize = size === 'lg' ? 'text-7xl' : size === 'md' ? 'text-5xl' : 'text-2xl'
+
+  if (src) {
     return (
-      <img src={`./assets/especies/${id}.jpg`} alt={nombre}
-        onError={() => setSrcFailed(true)}
-        className={`${sizes[size]} ${fit} rounded-xl`} />
+      <img
+        src={src}
+        alt={nombre}
+        onError={() => setFailed(true)}
+        className="w-full h-full object-cover object-center"
+      />
     )
   }
+
   return (
-    <div className={`${sizes[size]} flex items-center justify-center bg-ocean-800/50 rounded-xl`}>
-      <span className={size === 'lg' ? 'text-6xl' : size === 'md' ? 'text-4xl' : 'text-2xl'}>{emoji}</span>
+    <div className="w-full h-full flex items-center justify-center bg-ocean-800/60">
+      <span className={emojiSize}>🐟</span>
     </div>
   )
 }
@@ -283,17 +131,16 @@ function FormEspecie({ form, setF, imagenPreview, imagenPath, onSeleccionarImage
   onSeleccionarImagen: () => void
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
 
       {/* Imagen */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs text-ocean-400 font-medium">Imagen</label>
+        <FieldLabel>Imagen</FieldLabel>
         <div className="flex items-center gap-3">
-          {imagenPreview ? (
-            <img src={imagenPreview} alt="preview" className="w-20 h-20 object-cover rounded-xl border border-white/10" />
-          ) : (
-            <div className="w-20 h-20 flex items-center justify-center bg-ocean-800/50 rounded-xl border border-dashed border-white/20 text-3xl">🐟</div>
-          )}
+          {imagenPreview
+            ? <img src={imagenPreview} alt="preview" className="w-20 h-20 object-cover rounded-xl border border-white/10" />
+            : <div className="w-20 h-20 flex items-center justify-center bg-ocean-800/50 rounded-xl border border-dashed border-white/20 text-3xl">🐟</div>
+          }
           <button type="button" onClick={onSeleccionarImagen}
             className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
             📁 {imagenPath ? 'Cambiar imagen' : 'Adjuntar imagen'}
@@ -302,60 +149,85 @@ function FormEspecie({ form, setF, imagenPreview, imagenPath, onSeleccionarImage
         {imagenPath && <p className="text-ocean-500 text-xs truncate">{imagenPath}</p>}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Nombre común *</label>
-        <input value={form.nombre ?? ''} onChange={e => setF('nombre', e.target.value)}
-          placeholder="Ej: Pargo rayado"
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Nombre científico</label>
-        <input value={form.nombre_cientifico ?? ''} onChange={e => setF('nombre_cientifico', e.target.value)}
-          placeholder="Ej: Lutjanus synagris"
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Descripción</label>
-        <textarea value={form.descripcion ?? ''} onChange={e => setF('descripcion', e.target.value)}
-          rows={3} placeholder="Descripción general de la especie..."
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Fase lunar óptima</label>
-        <select value={form.luna_optima ?? 'cualquiera'} onChange={e => setF('luna_optima', e.target.value)}
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
-          {LUNAS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-        </select>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-ocean-400 font-medium">Prof. mínima (m)</label>
-          <input type="number" value={form.profundidad_min ?? 0} onChange={e => setF('profundidad_min', Number(e.target.value))}
-            className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-ocean-400 font-medium">Prof. máxima (m)</label>
-          <input type="number" value={form.profundidad_max ?? 100} onChange={e => setF('profundidad_max', Number(e.target.value))}
-            className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+      {/* Identificación */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Identificación</p>
+        <div className="space-y-3">
+          <TextInput label="Nombre común *" value={form.nombre ?? ''} onChange={v => setF('nombre', v)} placeholder="Ej: Pargo rayado" />
+          <TextInput label="Nombre científico" value={form.nombre_cientifico ?? ''} onChange={v => setF('nombre_cientifico', v)} placeholder="Ej: Lutjanus synagris" />
+          <TextArea label="Descripción general" value={form.descripcion ?? ''} onChange={v => setF('descripcion', v)} placeholder="Descripción general de la especie..." />
         </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Técnicas</label>
-        <input value={form.tecnicas ?? ''} onChange={e => setF('tecnicas', e.target.value)}
-          placeholder="Ej: Fondo, Jigging, Spinning"
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+
+      {/* Comportamiento */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Comportamiento y Hábitat</p>
+        <div className="space-y-3">
+          <TextArea label="Comportamiento" value={form.comportamiento ?? ''} onChange={v => setF('comportamiento', v)}
+            placeholder="Cómo caza, dónde vive, hábitos de alimentación..." rows={3} />
+          <TextInput label="Hábitat (separado por comas)" value={form.habitat ?? ''} onChange={v => setF('habitat', v)}
+            placeholder="Ej: Arrecife, Pelágico, Manglar" />
+          <TextInput label="Temporada alta" value={form.temporada_alta ?? ''} onChange={v => setF('temporada_alta', v)}
+            placeholder="Ej: Dic – Mar (época seca)" />
+        </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-ocean-400 font-medium">Cebos / Carnadas</label>
-        <input value={form.cebos ?? ''} onChange={e => setF('cebos', e.target.value)}
-          placeholder="Ej: Camarón, calamar, plumas"
-          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50" />
+
+      {/* Datos biométricos */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Datos Biométricos</p>
+        <div className="grid grid-cols-2 gap-3">
+          <TextInput label="Peso promedio" value={form.peso_promedio ?? ''} onChange={v => setF('peso_promedio', v)} placeholder="Ej: 3–8 kg" />
+          <TextInput label="Peso máximo" value={form.peso_maximo ?? ''} onChange={v => setF('peso_maximo', v)} placeholder="Ej: 45 kg" />
+          <TextInput label="Talla promedio" value={form.talla_promedio ?? ''} onChange={v => setF('talla_promedio', v)} placeholder="Ej: 60–90 cm" />
+          <TextInput label="Talla máxima" value={form.talla_maxima ?? ''} onChange={v => setF('talla_maxima', v)} placeholder="Ej: 185 cm" />
+          <TextInput label="Récord Colombia" value={form.record_colombia ?? ''} onChange={v => setF('record_colombia', v)} placeholder="Ej: ~20 kg" />
+          <TextInput label="Profundidad (detalle)" value={form.profundidad_detalle ?? ''} onChange={v => setF('profundidad_detalle', v)} placeholder="Ej: 0–100 m" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="flex flex-col gap-1">
+            <FieldLabel>Prof. mínima (m)</FieldLabel>
+            <input type="number" value={form.profundidad_min ?? 0} onChange={e => setF('profundidad_min', Number(e.target.value))}
+              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <FieldLabel>Prof. máxima (m)</FieldLabel>
+            <input type="number" value={form.profundidad_max ?? 100} onChange={e => setF('profundidad_max', Number(e.target.value))}
+              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50" />
+          </div>
+        </div>
+      </div>
+
+      {/* Pesca */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Pesca</p>
+        <div className="space-y-3">
+          <div className="flex flex-col gap-1">
+            <FieldLabel>Fase lunar óptima</FieldLabel>
+            <select value={form.luna_optima ?? 'cualquiera'} onChange={e => setF('luna_optima', e.target.value)}
+              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50">
+              {LUNAS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            </select>
+          </div>
+          <TextInput label="Técnicas (separadas por comas)" value={form.tecnicas ?? ''} onChange={v => setF('tecnicas', v)}
+            placeholder="Ej: Fondo, Jigging, Spinning" />
+          <TextInput label="Cebos / Carnadas (separados por comas)" value={form.cebos ?? ''} onChange={v => setF('cebos', v)}
+            placeholder="Ej: Camarón, calamar, plumas" />
+          <TextInput label="Colores de señuelos efectivos (separados por comas)" value={form.colores_senuelos ?? ''} onChange={v => setF('colores_senuelos', v)}
+            placeholder="Ej: Azul/Blanco, Plateado, Rojo/Blanco" />
+        </div>
+      </div>
+
+      {/* Curiosidad */}
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Dato Curioso</p>
+        <TextArea label="Sabías que..." value={form.curiosidad ?? ''} onChange={v => setF('curiosidad', v)}
+          placeholder="Un dato interesante sobre esta especie..." rows={2} />
       </div>
     </div>
   )
 }
 
-// ── Modal nueva especie ───────────────────────────────────────────────────────
+// ── Modal Nueva Especie ───────────────────────────────────────────────────────
 
 function ModalNuevaEspecie({ onClose, onGuardar }: {
   onClose: () => void
@@ -369,12 +241,12 @@ function ModalNuevaEspecie({ onClose, onGuardar }: {
   function setF(k: keyof Especie, v: any) { setForm(p => ({ ...p, [k]: v })) }
 
   async function seleccionarImagen() {
-    const filePath = await window.electronAPI.especies.selectImage()
-    if (filePath) { setImagenPath(filePath); setImagenPreview(`file://${filePath}`) }
+    const fp = await window.electronAPI.especies.selectImage()
+    if (fp) { setImagenPath(fp); setImagenPreview(`file://${fp}`) }
   }
 
   async function guardar() {
-    if (!form.nombre) { alert('El nombre es obligatorio.'); return }
+    if (!form.nombre?.trim()) { alert('El nombre es obligatorio.'); return }
     setGuardando(true)
     await onGuardar(form, imagenPath)
     setGuardando(false)
@@ -385,14 +257,14 @@ function ModalNuevaEspecie({ onClose, onGuardar }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-ocean-900 z-10">
           <h2 className="text-white font-bold text-lg">🐟 Nueva Especie</h2>
           <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
         </div>
         <div className="p-5">
           <FormEspecie form={form} setF={setF} imagenPreview={imagenPreview} imagenPath={imagenPath} onSeleccionarImagen={seleccionarImagen} />
         </div>
-        <div className="flex justify-end gap-3 p-5 border-t border-white/10">
+        <div className="flex justify-end gap-3 p-5 border-t border-white/10 sticky bottom-0 bg-ocean-900">
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
             Cancelar
@@ -407,7 +279,7 @@ function ModalNuevaEspecie({ onClose, onGuardar }: {
   )
 }
 
-// ── Modal editar especie ──────────────────────────────────────────────────────
+// ── Modal Editar Especie ──────────────────────────────────────────────────────
 
 function ModalEditarEspecie({ especie, onClose, onGuardar }: {
   especie: Especie
@@ -415,14 +287,25 @@ function ModalEditarEspecie({ especie, onClose, onGuardar }: {
   onGuardar: (id: string, e: Partial<Especie>, imagenPath: string | null) => Promise<void>
 }) {
   const [form, setForm] = useState<Partial<Especie>>({
-    nombre:            especie.nombre,
-    nombre_cientifico: especie.nombre_cientifico ?? '',
-    descripcion:       especie.descripcion ?? '',
-    luna_optima:       especie.luna_optima ?? 'cualquiera',
-    profundidad_min:   especie.profundidad_min ?? 0,
-    profundidad_max:   especie.profundidad_max ?? 100,
-    tecnicas:          especie.tecnicas ?? '',
-    cebos:             especie.cebos ?? '',
+    nombre:              especie.nombre,
+    nombre_cientifico:   especie.nombre_cientifico ?? '',
+    descripcion:         especie.descripcion ?? '',
+    luna_optima:         especie.luna_optima ?? 'cualquiera',
+    profundidad_min:     especie.profundidad_min ?? 0,
+    profundidad_max:     especie.profundidad_max ?? 100,
+    tecnicas:            especie.tecnicas ?? '',
+    cebos:               especie.cebos ?? '',
+    peso_promedio:       especie.peso_promedio ?? '',
+    peso_maximo:         especie.peso_maximo ?? '',
+    talla_promedio:      especie.talla_promedio ?? '',
+    talla_maxima:        especie.talla_maxima ?? '',
+    record_colombia:     especie.record_colombia ?? '',
+    profundidad_detalle: especie.profundidad_detalle ?? '',
+    habitat:             especie.habitat ?? '',
+    temporada_alta:      especie.temporada_alta ?? '',
+    comportamiento:      especie.comportamiento ?? '',
+    colores_senuelos:    especie.colores_senuelos ?? '',
+    curiosidad:          especie.curiosidad ?? '',
   })
   const [guardando, setGuardando]         = useState(false)
   const [imagenPath, setImagenPath]       = useState<string | null>(null)
@@ -431,12 +314,12 @@ function ModalEditarEspecie({ especie, onClose, onGuardar }: {
   function setF(k: keyof Especie, v: any) { setForm(p => ({ ...p, [k]: v })) }
 
   async function seleccionarImagen() {
-    const filePath = await window.electronAPI.especies.selectImage()
-    if (filePath) { setImagenPath(filePath); setImagenPreview(`file://${filePath}`) }
+    const fp = await window.electronAPI.especies.selectImage()
+    if (fp) { setImagenPath(fp); setImagenPreview(`file://${fp}`) }
   }
 
   async function guardar() {
-    if (!form.nombre) { alert('El nombre es obligatorio.'); return }
+    if (!form.nombre?.trim()) { alert('El nombre es obligatorio.'); return }
     setGuardando(true)
     await onGuardar(especie.id!, form, imagenPath)
     setGuardando(false)
@@ -447,14 +330,17 @@ function ModalEditarEspecie({ especie, onClose, onGuardar }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <h2 className="text-white font-bold text-lg">✏️ Editar Especie</h2>
+        <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-ocean-900 z-10">
+          <div>
+            <h2 className="text-white font-bold text-lg">✏️ Editar Especie</h2>
+            <p className="text-ocean-400 text-xs mt-0.5">{especie.nombre}</p>
+          </div>
           <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
         </div>
         <div className="p-5">
           <FormEspecie form={form} setF={setF} imagenPreview={imagenPreview} imagenPath={imagenPath} onSeleccionarImagen={seleccionarImagen} />
         </div>
-        <div className="flex justify-end gap-3 p-5 border-t border-white/10">
+        <div className="flex justify-end gap-3 p-5 border-t border-white/10 sticky bottom-0 bg-ocean-900">
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
             Cancelar
@@ -469,52 +355,81 @@ function ModalEditarEspecie({ especie, onClose, onGuardar }: {
   )
 }
 
-// ── Modal detalle especie ─────────────────────────────────────────────────────
+// ── Modal Detalle ─────────────────────────────────────────────────────────────
 
-function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => void }) {
-  const datos = DATOS_RICOS[especie.id ?? '']
-  const lunaIcono = getIconoFase(especie.luna_optima ?? 'cualquiera')
+function ModalDetalle({ especie, onClose, onEditar }: {
+  especie: Especie
+  onClose: () => void
+  onEditar: () => void
+}) {
+  const lunaIcono  = getIconoFase(especie.luna_optima ?? 'cualquiera')
+  const habitat    = especie.habitat?.split(',').map(h => h.trim()).filter(Boolean) ?? []
+  const tecnicas   = especie.tecnicas?.split(',').map(t => t.trim()).filter(Boolean) ?? []
+  const colores    = especie.colores_senuelos?.split(',').map(c => c.trim()).filter(Boolean) ?? []
+  const cebos      = especie.cebos?.split(',').map(c => c.trim()).filter(Boolean) ?? []
+
+  const stats = [
+    { icono: '⚖️', label: 'Peso promedio',    valor: especie.peso_promedio },
+    { icono: '🏆', label: 'Peso máximo',      valor: especie.peso_maximo },
+    { icono: '📏', label: 'Talla promedio',   valor: especie.talla_promedio },
+    { icono: '📐', label: 'Talla máxima',     valor: especie.talla_maxima },
+    { icono: '🇨🇴', label: 'Récord Colombia',  valor: especie.record_colombia },
+    { icono: '🌊', label: 'Profundidad',      valor: especie.profundidad_detalle },
+  ].filter(s => s.valor)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="relative">
+
+        {/* Imagen header */}
+        <div className="relative w-full aspect-video overflow-hidden rounded-t-2xl">
           <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" imagen={especie.imagen} />
-          <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/60 to-transparent rounded-t-2xl" />
-          <button onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors">
-            ✕
-          </button>
+          <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/40 to-transparent" />
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button onClick={onEditar}
+              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-amber-500/80 text-white text-xs font-semibold transition-colors">
+              ✏️ Editar
+            </button>
+            <button onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors">
+              ✕
+            </button>
+          </div>
           <div className="absolute bottom-4 left-5">
-            <h2 className="text-white font-bold text-2xl">{especie.nombre}</h2>
-            <p className="text-ocean-300 text-sm italic">{especie.nombre_cientifico}</p>
+            <h2 className="text-white font-bold text-2xl drop-shadow">{especie.nombre}</h2>
+            {especie.nombre_cientifico && (
+              <p className="text-ocean-300 text-sm italic">{especie.nombre_cientifico}</p>
+            )}
           </div>
         </div>
 
         <div className="p-5 space-y-5">
+
+          {/* Badges */}
           <div className="flex flex-wrap gap-2">
-            <Badge text={`${lunaIcono} ${especie.luna_optima ?? 'Cualquier fase'}`} color="amber" />
-            {datos?.habitat?.map(h => <Badge key={h} text={h} color="blue" />)}
-            {datos?.temporada_alta && <Badge text={`📅 ${datos.temporada_alta}`} color="green" />}
+            <Badge text={`${lunaIcono} ${LUNAS.find(l => l.value === especie.luna_optima)?.label?.replace(/^.{2}/, '') ?? especie.luna_optima ?? 'Cualquier fase'}`} color="amber" />
+            {habitat.map(h => <Badge key={h} text={h} color="blue" />)}
+            {especie.temporada_alta && <Badge text={`📅 ${especie.temporada_alta}`} color="green" />}
           </div>
-          {especie.descripcion && <p className="text-ocean-200 text-sm leading-relaxed">{especie.descripcion}</p>}
-          {datos?.comportamiento && (
+
+          {/* Descripción */}
+          {especie.descripcion && (
+            <p className="text-ocean-200 text-sm leading-relaxed">{especie.descripcion}</p>
+          )}
+
+          {/* Comportamiento */}
+          {especie.comportamiento && (
             <div className="bg-ocean-800/40 rounded-xl p-4">
-              <p className="text-ocean-400 text-xs font-semibold uppercase mb-1">🧠 Comportamiento</p>
-              <p className="text-ocean-200 text-sm leading-relaxed">{datos.comportamiento}</p>
+              <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🧠 Comportamiento</p>
+              <p className="text-ocean-200 text-sm leading-relaxed">{especie.comportamiento}</p>
             </div>
           )}
-          {datos && (
+
+          {/* Stats biométricos */}
+          {stats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { icono: '⚖️', label: 'Peso promedio',    valor: datos.peso_promedio },
-                { icono: '🏆', label: 'Peso máximo',      valor: datos.peso_maximo },
-                { icono: '📏', label: 'Talla promedio',   valor: datos.talla_promedio },
-                { icono: '📐', label: 'Talla máxima',     valor: datos.talla_maxima },
-                { icono: '🇨🇴', label: 'Récord Colombia', valor: datos.record_colombia },
-                { icono: '🌊', label: 'Profundidad',      valor: datos.profundidad },
-              ].map((s, i) => (
+              {stats.map((s, i) => (
                 <div key={i} className="bg-ocean-800/40 rounded-xl p-3 text-center">
                   <p className="text-lg mb-0.5">{s.icono}</p>
                   <p className="text-white font-bold text-sm">{s.valor}</p>
@@ -523,32 +438,53 @@ function ModalDetalle({ especie, onClose }: { especie: Especie; onClose: () => v
               ))}
             </div>
           )}
-          {datos?.colores_senuelos && (
+
+          {/* Colores de señuelos */}
+          {colores.length > 0 && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🎨 Colores de señuelos efectivos</p>
               <div className="flex flex-wrap gap-2">
-                {datos.colores_senuelos.map(c => <Badge key={c} text={c} color="amber" />)}
+                {colores.map(c => <Badge key={c} text={c} color="amber" />)}
               </div>
             </div>
           )}
-          {datos?.tecnicas && (
+
+          {/* Técnicas */}
+          {tecnicas.length > 0 && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🎣 Técnicas recomendadas</p>
               <div className="flex flex-wrap gap-2">
-                {datos.tecnicas.map(t => <Badge key={t} text={t} color="green" />)}
+                {tecnicas.map(t => <Badge key={t} text={t} color="green" />)}
               </div>
             </div>
           )}
-          {especie.cebos && (
+
+          {/* Cebos */}
+          {cebos.length > 0 && (
             <div>
               <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">🪝 Cebos / Carnadas</p>
-              <p className="text-ocean-200 text-sm">{especie.cebos}</p>
+              <div className="flex flex-wrap gap-2">
+                {cebos.map(c => <Badge key={c} text={c} color="ocean" />)}
+              </div>
             </div>
           )}
-          {datos?.curiosidad && (
+
+          {/* Curiosidad */}
+          {especie.curiosidad && (
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
               <p className="text-amber-400 text-xs font-semibold uppercase mb-1">💡 Sabías que...</p>
-              <p className="text-ocean-200 text-sm leading-relaxed">{datos.curiosidad}</p>
+              <p className="text-ocean-200 text-sm leading-relaxed">{especie.curiosidad}</p>
+            </div>
+          )}
+
+          {/* Sin datos */}
+          {!especie.descripcion && !especie.comportamiento && stats.length === 0 && tecnicas.length === 0 && (
+            <div className="text-center py-6 text-ocean-500">
+              <p className="text-3xl mb-2">📝</p>
+              <p className="text-sm">Sin información adicional.</p>
+              <button onClick={onEditar} className="mt-2 text-amber-400 text-xs hover:underline">
+                Editar para agregar información →
+              </button>
             </div>
           )}
         </div>
@@ -579,22 +515,18 @@ export default function Especies() {
     await window.electronAPI.especies.update(id, datos)
     if (imagenPath) await window.electronAPI.especies.saveImage(id, imagenPath)
     await loadAll()
+    // Refrescar el detalle si está abierto
+    if (detalle?.id === id) {
+      setDetalle(prev => prev ? { ...prev, ...datos } : prev)
+    }
   }
 
   async function eliminarEspecie(especie: Especie) {
     if (!confirm(`¿Eliminar "${especie.nombre}"? Esta acción no se puede deshacer.`)) return
     await window.electronAPI.especies.delete(especie.id!)
     await loadAll()
+    if (detalle?.id === especie.id) setDetalle(null)
   }
-
-  const LUNAS_FILTRO = [
-    { value: '',           label: '🌙 Todas las fases' },
-    { value: 'nueva',      label: '🌑 Luna Nueva' },
-    { value: 'creciente',  label: '🌒 Creciente' },
-    { value: 'llena',      label: '🌕 Luna Llena' },
-    { value: 'menguante',  label: '🌘 Menguante' },
-    { value: 'cualquiera', label: '🌙 Cualquiera' },
-  ]
 
   const especiesFiltradas = especies.filter(e => {
     const matchBusq = !busqueda ||
@@ -611,51 +543,40 @@ export default function Especies() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1 relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ocean-500">🔍</span>
-          <input
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
+          <input value={busqueda} onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar especie..."
-            className="w-full bg-ocean-900/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 transition-colors"
-          />
+            className="w-full bg-ocean-900/60 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 transition-colors" />
         </div>
-        <select
-          value={filtroLuna}
-          onChange={e => setFiltroLuna(e.target.value)}
-          className="bg-ocean-900/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50"
-        >
+        <select value={filtroLuna} onChange={e => setFiltroLuna(e.target.value)}
+          className="bg-ocean-900/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500/50">
           {LUNAS_FILTRO.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
         </select>
-        <button
-          onClick={() => setModalNueva(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-ocean-950 font-bold text-sm transition-colors"
-        >
+        <button onClick={() => setModalNueva(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-ocean-950 font-bold text-sm transition-colors whitespace-nowrap">
           + Nueva Especie
         </button>
       </div>
 
-      {/* Contador */}
       <p className="text-ocean-400 text-xs">
         {especiesFiltradas.length} especie{especiesFiltradas.length !== 1 ? 's' : ''}
         {busqueda || filtroLuna ? ' (filtradas)' : ' en el catálogo'}
       </p>
 
-      {/* Grid de cards */}
+      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {especiesFiltradas.map(especie => {
           const lunaIcono = getIconoFase(especie.luna_optima ?? 'cualquiera')
-          const datos = DATOS_RICOS[especie.id ?? '']
+          const habitat   = especie.habitat?.split(',').map(h => h.trim()).filter(Boolean) ?? []
 
           return (
-            <Card
-              key={especie.id}
-              className="overflow-hidden hover:border-amber-500/30 hover:bg-ocean-800/60 transition-all duration-200 group"
-            >
-              {/* Imagen clickeable para detalle */}
-              <button className="w-full text-left" onClick={() => setDetalle(especie)}>
-                <div className="relative">
-                  <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="lg" imagen={especie.imagen} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-transparent to-transparent" />
-                  <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1 text-sm">
+            <Card key={especie.id} className="overflow-hidden hover:border-amber-500/30 transition-all duration-200 group">
+
+              {/* Imagen */}
+              <button className="w-full text-left block" onClick={() => setDetalle(especie)}>
+                <div className="relative w-full aspect-square overflow-hidden rounded-t-2xl">
+                  <EspecieImg id={especie.id ?? ''} nombre={especie.nombre} size="md" imagen={especie.imagen} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/80 via-transparent to-transparent" />
+                  <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1 text-sm">
                     {lunaIcono}
                   </div>
                 </div>
@@ -663,45 +584,49 @@ export default function Especies() {
 
               <div className="p-4">
                 <button className="w-full text-left" onClick={() => setDetalle(especie)}>
-                  <h3 className="text-white font-bold text-base group-hover:text-amber-400 transition-colors">
+                  <h3 className="text-white font-bold text-base group-hover:text-amber-400 transition-colors leading-tight">
                     {especie.nombre}
                   </h3>
                   {especie.nombre_cientifico && (
                     <p className="text-ocean-400 text-xs italic mb-2">{especie.nombre_cientifico}</p>
                   )}
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {datos?.habitat?.slice(0, 2).map(h => (
-                      <span key={h} className="px-1.5 py-0.5 rounded-md bg-ocean-700/50 text-ocean-300 text-xs border border-white/10">
-                        {h}
-                      </span>
-                    ))}
-                  </div>
-                  {datos && (
+
+                  {/* Habitat badges */}
+                  {habitat.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {habitat.slice(0, 2).map(h => (
+                        <span key={h} className="px-1.5 py-0.5 rounded-md bg-ocean-700/50 text-ocean-300 text-xs border border-white/10">{h}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Stats rápidos */}
+                  {(especie.peso_promedio || especie.profundidad_detalle) && (
                     <div className="grid grid-cols-2 gap-1.5 text-xs mb-3">
-                      <div className="bg-ocean-800/50 rounded-lg px-2 py-1.5">
-                        <p className="text-ocean-500">⚖️ Peso prom.</p>
-                        <p className="text-white font-semibold">{datos.peso_promedio}</p>
-                      </div>
-                      <div className="bg-ocean-800/50 rounded-lg px-2 py-1.5">
-                        <p className="text-ocean-500">🌊 Prof.</p>
-                        <p className="text-white font-semibold truncate">{datos.profundidad.split(' ')[0]}</p>
-                      </div>
+                      {especie.peso_promedio && (
+                        <div className="bg-ocean-800/50 rounded-lg px-2 py-1.5">
+                          <p className="text-ocean-500">⚖️ Peso prom.</p>
+                          <p className="text-white font-semibold">{especie.peso_promedio}</p>
+                        </div>
+                      )}
+                      {especie.profundidad_detalle && (
+                        <div className="bg-ocean-800/50 rounded-lg px-2 py-1.5">
+                          <p className="text-ocean-500">🌊 Prof.</p>
+                          <p className="text-white font-semibold truncate">{especie.profundidad_detalle.split(' ')[0]}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </button>
 
-                {/* Botones editar / eliminar */}
+                {/* Acciones */}
                 <div className="flex gap-2 pt-2 border-t border-white/5">
-                  <button
-                    onClick={() => setEditando(especie)}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-ocean-700/50 hover:bg-ocean-600/50 text-ocean-300 hover:text-white text-xs transition-colors"
-                  >
+                  <button onClick={() => setEditando(especie)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-ocean-700/50 hover:bg-ocean-600/50 text-ocean-300 hover:text-white text-xs transition-colors">
                     ✏️ Editar
                   </button>
-                  <button
-                    onClick={() => eliminarEspecie(especie)}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs transition-colors"
-                  >
+                  <button onClick={() => eliminarEspecie(especie)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs transition-colors">
                     🗑️ Eliminar
                   </button>
                 </div>
@@ -720,7 +645,13 @@ export default function Especies() {
       )}
 
       {/* Modales */}
-      {detalle && <ModalDetalle especie={detalle} onClose={() => setDetalle(null)} />}
+      {detalle && (
+        <ModalDetalle
+          especie={detalle}
+          onClose={() => setDetalle(null)}
+          onEditar={() => { setEditando(detalle); setDetalle(null) }}
+        />
+      )}
       {editando && (
         <ModalEditarEspecie
           especie={editando}
