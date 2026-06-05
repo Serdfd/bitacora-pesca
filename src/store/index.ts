@@ -24,6 +24,9 @@ interface AppState {
 
   // Actions — especies
   addEspecie:    (e: Especie)                              => Promise<void>
+
+  zonaSeleccionadaId: string
+  setZonaSeleccionada: (id: string) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -141,8 +144,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       throw err
     }
   },
-  
 
+  zonaSeleccionadaId: localStorage.getItem('hoy_zona_seleccionada') ?? '',
+  setZonaSeleccionada: (id) => {
+    localStorage.setItem('hoy_zona_seleccionada', id)
+    set({ zonaSeleccionadaId: id })
+  },
 
   // ── Especies ────────────────────────────────────────────────────────────────
 

@@ -25,13 +25,11 @@ interface FormData {
   region_id: string
   spot_id: string
   clima: string
-  viento_dir: string
-  viento_fuerza: string
   estado_mar: string
   claridad_agua: string
-  temp_agua: number | ''
   marea_salida: string
   fase_lunar: string
+  calificacion: number
   notas: string
   capturas: CapturaForm[]
 }
@@ -42,15 +40,28 @@ const EMPTY_CAPTURA: CapturaForm = {
   color_senuelo: '', tecnica: 'Spinning', liberado: false,
 }
 
-const CLIMAS       = ['Soleado', 'Parcialmente nublado', 'Nublado', 'Lluvioso', 'Ventoso', 'Tormenta']
-const VIENTO_DIR   = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
-const VIENTO_FUERZA= ['Calma (0-5 km/h)', 'Suave (5-15 km/h)', 'Moderado (15-25 km/h)', 'Fuerte (25-40 km/h)', 'Muy fuerte (+40 km/h)']
-const ESTADO_MAR   = ['Calmo (vidrio)', 'Calmo', 'Poco agitado', 'Agitado', 'Muy agitado']
-const CLARIDAD     = ['Clara', 'Media', 'Turbia', 'Muy turbia']
-const MAREAS       = ['Pleamar', 'Bajamar', 'Subiendo', 'Bajando', 'No observado']
-const TECNICAS     = ['Spinning', 'Trolling', 'Jigging', 'Fondo', 'Mosca', 'Curricán', 'Cuchareo', 'Otro']
-const FASES_LUNAR  = ['nueva', 'creciente', 'cuarto_creciente', 'gibosa_creciente', 'llena', 'gibosa_menguante', 'cuarto_menguante', 'menguante']
-const COLORES      = ['Amarillo/Dorado', 'Azul/Blanco', 'Rojo/Blanco', 'Verde/Amarillo', 'Naranja', 'Rosa/Blanco', 'Negro', 'Plateado', 'Natural/Transparente', 'Multicolor', 'Otro']
+const CLIMAS     = ['Soleado', 'Parcialmente nublado', 'Nublado', 'Lluvioso', 'Ventoso', 'Tormenta']
+const ESTADO_MAR = ['Calmo (vidrio)', 'Calmo', 'Poco agitado', 'Agitado', 'Muy agitado']
+const CLARIDAD   = ['Clara', 'Media', 'Turbia', 'Muy turbia']
+const MAREAS     = ['Pleamar', 'Bajamar', 'Subiendo', 'Bajando', 'No observado']
+const TECNICAS   = ['Spinning', 'Trolling', 'Jigging', 'Fondo', 'Mosca', 'Curricán', 'Cuchareo', 'Otro']
+
+const SENUELOS_NATURALES   = [
+  'Camarón vivo', 'Camarón muerto', 'Sardina', 'Calamar',
+  'Macabí vivo', 'Mojarra viva', 'Cojinúa viva', 'Lisa viva',
+  'Pulpo', 'Cangrejo', 'Jurel', 'Bonito',
+]
+const SENUELOS_ARTIFICIALES = [
+  'Pluma / Jig de plumas', 'Cuchara / Spinner', 'Popper',
+  'Minnow (Rapala)', 'Jig metálico', 'Soft bait / Vinilo',
+  'Wobbler', 'Spoon', 'Señuelo de superficie', 'Curricán natural',
+  'Pulpito de goma', 'Curricán grande / Skirt lure',
+]
+const SENUELOS_OTROS = ['Lombriz', 'Mezcla de carnadas', 'Otro']
+
+const CAL_LABEL: Record<number, string> = {
+  1: 'Mala', 2: 'Regular', 3: 'Buena', 4: 'Muy buena', 5: 'Excelente',
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -66,6 +77,16 @@ function getFaseLunarNombre(fase: string): string {
     cuarto_menguante: '🌗 Cuarto Menguante', menguante: '🌘 Menguante',
   }
   return mapa[fase] ?? fase
+}
+
+function renderEstrellas(n: number, size = 'text-lg') {
+  return (
+    <span className={size}>
+      {[1,2,3,4,5].map(i => (
+        <span key={i} className={i <= n ? 'text-amber-400' : 'text-ocean-700'}>★</span>
+      ))}
+    </span>
+  )
 }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -129,6 +150,31 @@ function Input({ label, type = 'text', value, onChange, placeholder = '', classN
   )
 }
 
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <div className="flex items-center gap-1">
+      {[1,2,3,4,5].map(star => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => onChange(star === value ? 0 : star)}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(0)}
+          className="text-3xl transition-transform hover:scale-110 focus:outline-none"
+        >
+          <span className={(hover || value) >= star ? 'text-amber-400' : 'text-ocean-700'}>★</span>
+        </button>
+      ))}
+      {(hover || value) > 0 && (
+        <span className="text-ocean-400 text-sm ml-2">
+          {CAL_LABEL[hover || value]}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function Bitacora() {
@@ -137,24 +183,20 @@ export default function Bitacora() {
   const [guardando, setGuardando]     = useState(false)
   const [expandida, setExpandida]     = useState<number | null>(null)
 
-  // Fase lunar auto-calculada
   const faseAuto = getInfoLunar(new Date()).fase
 
-  const [form, setForm] = useState<FormData>({
+  const formInicial: FormData = {
     fecha: hoy(), hora_salida: '05:30', hora_regreso: '',
-    num_pescadores: 1,
-    region_id: '', spot_id: '',
-    clima: 'Soleado', viento_dir: 'NE', viento_fuerza: 'Moderado (15-25 km/h)',
-    estado_mar: 'Poco agitado', claridad_agua: 'Clara',
-    temp_agua: '', marea_salida: 'Subiendo',
-    fase_lunar: faseAuto,
-    notas: '',
-    capturas: [],
-  })
+    num_pescadores: 1, region_id: '', spot_id: '',
+    clima: 'Soleado', estado_mar: 'Poco agitado', claridad_agua: 'Clara',
+    marea_salida: 'Subiendo', fase_lunar: faseAuto,
+    calificacion: 0, notas: '', capturas: [],
+  }
+
+  const [form, setForm] = useState<FormData>(formInicial)
 
   useEffect(() => { if (regiones.length === 0) loadAll() }, [])
 
-  // Spots del región seleccionada
   const spots = regiones.find(r => r.id === form.region_id)?.spots ?? []
 
   function setF<K extends keyof FormData>(k: K, v: FormData[K]) {
@@ -194,47 +236,39 @@ export default function Bitacora() {
     const spot   = region?.spots.find(s => s.id === form.spot_id)
 
     const entrada: EntradaBitacora = {
-      fecha:         form.fecha,
-      region_id:     form.region_id,
-      spot_id:       form.spot_id,
-      region_nombre: region?.nombre,
-      spot_nombre:   spot?.nombre,
-      clima:         [form.clima, form.viento_dir, form.viento_fuerza].filter(Boolean).join(' · '),
-      viento:        `${form.viento_dir} ${form.viento_fuerza}`,
-      marea:         form.marea_salida,
-      fase_lunar:    form.fase_lunar,
+      fecha:          form.fecha,
+      region_id:      form.region_id,
+      spot_id:        form.spot_id,
+      region_nombre:  region?.nombre,
+      spot_nombre:    spot?.nombre,
+      clima:          form.clima,
+      marea:          form.marea_salida,
+      fase_lunar:     faseAuto,
+      calificacion:   form.calificacion,
       notas: [
         form.notas,
         `Estado del mar: ${form.estado_mar}`,
         `Claridad: ${form.claridad_agua}`,
-        form.temp_agua ? `Temp. agua: ${form.temp_agua}°C` : '',
-        form.hora_salida ? `Salida: ${form.hora_salida}` : '',
-        form.hora_regreso ? `Regreso: ${form.hora_regreso}` : '',
+        form.hora_salida   ? `Salida: ${form.hora_salida}`             : '',
+        form.hora_regreso  ? `Regreso: ${form.hora_regreso}`           : '',
         form.num_pescadores > 1 ? `Pescadores: ${form.num_pescadores}` : '',
       ].filter(Boolean).join('\n'),
       capturas: form.capturas.map(c => ({
-        especie_id:    c.especie_id,
-        especie_nombre:c.especie_nombre,
-        cantidad:      c.cantidad,
-        peso_kg:       c.peso_kg !== '' ? Number(c.peso_kg) : undefined,
-        talla_cm:      c.talla_cm !== '' ? Number(c.talla_cm) : undefined,
-        senuelo:       [c.senuelo, c.color_senuelo].filter(Boolean).join(' — '),
-        tecnica:       c.tecnica,
-        liberado:      c.liberado,
+        especie_id:     c.especie_id,
+        especie_nombre: c.especie_nombre,
+        cantidad:       c.cantidad,
+        peso_kg:        c.peso_kg !== '' ? Number(c.peso_kg) : undefined,
+        talla_cm:       c.talla_cm !== '' ? Number(c.talla_cm) : undefined,
+        senuelo:        [c.senuelo, c.color_senuelo].filter(Boolean).join(' — '),
+        tecnica:        c.tecnica,
+        liberado:       c.liberado,
       } as Captura)),
     }
 
     await addEntrada(entrada)
     setGuardando(false)
     setMostrarForm(false)
-    setForm({
-      fecha: hoy(), hora_salida: '05:30', hora_regreso: '',
-      num_pescadores: 1, region_id: '', spot_id: '',
-      clima: 'Soleado', viento_dir: 'NE', viento_fuerza: 'Moderado (15-25 km/h)',
-      estado_mar: 'Poco agitado', claridad_agua: 'Clara',
-      temp_agua: '', marea_salida: 'Subiendo', fase_lunar: faseAuto,
-      notas: '', capturas: [],
-    })
+    setForm({ ...formInicial })
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -244,14 +278,14 @@ export default function Bitacora() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-ocean-400 text-sm">{bitacora.length} salida{bitacora.length !== 1 ? 's' : ''} registrada{bitacora.length !== 1 ? 's' : ''}</p>
-        </div>
+        <p className="text-ocean-400 text-sm">
+          {bitacora.length} salida{bitacora.length !== 1 ? 's' : ''} registrada{bitacora.length !== 1 ? 's' : ''}
+        </p>
         <button
           onClick={() => setMostrarForm(v => !v)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-ocean-950 font-bold text-sm transition-colors"
         >
-          <span>{mostrarForm ? '✕ Cancelar' : '+ Nueva Salida'}</span>
+          {mostrarForm ? '✕ Cancelar' : '+ Nueva Salida'}
         </button>
       </div>
 
@@ -289,24 +323,15 @@ export default function Bitacora() {
             <SectionTitle icono="🌤️" titulo="Condiciones del Día" subtitulo="Registra las condiciones ambientales al momento de la salida" />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <Select label="Clima" value={form.clima} onChange={v => setF('clima', v)} options={CLIMAS} />
-              <Select label="Dirección del viento" value={form.viento_dir} onChange={v => setF('viento_dir', v)} options={VIENTO_DIR} />
-              <Select label="Fuerza del viento" value={form.viento_fuerza} onChange={v => setF('viento_fuerza', v)} options={VIENTO_FUERZA} />
               <Select label="Estado del mar" value={form.estado_mar} onChange={v => setF('estado_mar', v)} options={ESTADO_MAR} />
               <Select label="Claridad del agua" value={form.claridad_agua} onChange={v => setF('claridad_agua', v)} options={CLARIDAD} />
-              <Input label="Temperatura del agua (°C)" type="number" value={form.temp_agua} onChange={v => setF('temp_agua', v === '' ? '' : Number(v))} placeholder="28" />
               <Select label="Marea al salir" value={form.marea_salida} onChange={v => setF('marea_salida', v)} options={MAREAS} />
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-ocean-400 font-medium">Fase Lunar</label>
-                <select
-                  value={form.fase_lunar}
-                  onChange={e => setF('fase_lunar', e.target.value)}
-                  className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
-                >
-                  {FASES_LUNAR.map(f => (
-                    <option key={f} value={f}>{getFaseLunarNombre(f)}</option>
-                  ))}
-                </select>
-                <p className="text-ocean-500 text-xs">Auto: {getFaseLunarNombre(faseAuto)}</p>
+                <div className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm">
+                  {getFaseLunarNombre(faseAuto)}
+                </div>
+                <p className="text-ocean-600 text-xs">Calculada automáticamente</p>
               </div>
             </div>
           </Card>
@@ -319,7 +344,7 @@ export default function Bitacora() {
                 onClick={addCaptura}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-ocean-700/60 hover:bg-ocean-600/60 border border-white/10 text-white text-sm transition-colors"
               >
-                <span>+</span> Agregar especie
+                + Agregar especie
               </button>
             </div>
 
@@ -347,7 +372,7 @@ export default function Bitacora() {
 
                     {/* Fila 1: especie, cantidad, peso, talla */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                      <div className="flex flex-col gap-1 md:col-span-1">
+                      <div className="flex flex-col gap-1">
                         <label className="text-xs text-ocean-400 font-medium">Especie</label>
                         <select
                           value={cap.especie_id}
@@ -372,20 +397,31 @@ export default function Bitacora() {
 
                     {/* Fila 2: señuelo, color, técnica, liberado */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <Input label="Señuelo / Carnada" value={cap.senuelo}
-                        onChange={v => updateCaptura(i, 'senuelo', v)}
-                        placeholder="Pluma, cuchara, vivo..." />
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-ocean-400 font-medium">Color del señuelo</label>
+                        <label className="text-xs text-ocean-400 font-medium">Señuelo / Carnada</label>
                         <select
-                          value={cap.color_senuelo}
-                          onChange={e => updateCaptura(i, 'color_senuelo', e.target.value)}
+                          value={cap.senuelo}
+                          onChange={e => updateCaptura(i, 'senuelo', e.target.value)}
                           className="bg-ocean-700/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500/50"
                         >
-                          <option value="">— Color —</option>
-                          {COLORES.map(c => <option key={c} value={c}>{c}</option>)}
+                          <option value="">— Seleccionar —</option>
+                          <optgroup label="🦐 Carnadas Naturales">
+                            {SENUELOS_NATURALES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </optgroup>
+                          <optgroup label="🎣 Señuelos Artificiales">
+                            {SENUELOS_ARTIFICIALES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </optgroup>
+                          <optgroup label="Otros">
+                            {SENUELOS_OTROS.map(s => <option key={s} value={s}>{s}</option>)}
+                          </optgroup>
                         </select>
                       </div>
+                      <Input
+                        label="Color del señuelo"
+                        value={cap.color_senuelo}
+                        onChange={v => updateCaptura(i, 'color_senuelo', v)}
+                        placeholder="Ej: Azul/Blanco, Dorado..."
+                      />
                       <div className="flex flex-col gap-1">
                         <label className="text-xs text-ocean-400 font-medium">Técnica</label>
                         <select
@@ -415,16 +451,26 @@ export default function Bitacora() {
             )}
           </Card>
 
-          {/* Bloque 4: Notas */}
+          {/* Bloque 4: Calificación y Notas */}
           <Card>
-            <SectionTitle icono="📝" titulo="Notas Generales" subtitulo="Observaciones adicionales, comportamiento del cardumen, puntos de interés..." />
-            <textarea
-              value={form.notas}
-              onChange={e => setF('notas', e.target.value)}
-              rows={4}
-              placeholder="Ej: El cardumen estaba cerca de la boya norte, mucha actividad de aves..."
-              className="w-full bg-ocean-800/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors"
-            />
+            <SectionTitle icono="⭐" titulo="Calificación y Notas" />
+            <div className="mb-5">
+              <label className="text-xs text-ocean-400 font-medium block mb-2">Calificación de la salida</label>
+              <StarRating value={form.calificacion} onChange={v => setF('calificacion', v)} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-ocean-400 font-medium">
+                Notas generales
+                <span className="text-ocean-600 font-normal ml-1">(opcional)</span>
+              </label>
+              <textarea
+                value={form.notas}
+                onChange={e => setF('notas', e.target.value)}
+                rows={4}
+                placeholder="Ej: El cardumen estaba cerca de la boya norte, mucha actividad de aves..."
+                className="w-full bg-ocean-800/60 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors"
+              />
+            </div>
           </Card>
 
           {/* Botón guardar */}
@@ -484,11 +530,10 @@ export default function Bitacora() {
                       <span className="text-ocean-500 text-xs">·</span>
                       <p className="text-ocean-300 text-xs">{entrada.region_nombre ?? entrada.region_id}</p>
                     </div>
-                    {/* Chips de condiciones */}
                     <div className="flex items-center gap-2 flex-wrap">
                       {entrada.clima && (
                         <span className="px-2 py-0.5 rounded-full bg-ocean-700/50 text-ocean-300 text-xs border border-white/10">
-                          🌤️ {entrada.clima.split(' · ')[0]}
+                          🌤️ {entrada.clima}
                         </span>
                       )}
                       {entrada.marea && (
@@ -500,6 +545,9 @@ export default function Bitacora() {
                         <span className="px-2 py-0.5 rounded-full bg-ocean-700/50 text-ocean-300 text-xs border border-white/10">
                           {getFaseLunarNombre(entrada.fase_lunar).split(' ')[0]}
                         </span>
+                      )}
+                      {(entrada.calificacion ?? 0) > 0 && (
+                        <span className="text-sm">{renderEstrellas(entrada.calificacion!)}</span>
                       )}
                     </div>
                   </div>
@@ -523,6 +571,17 @@ export default function Bitacora() {
                 {isOpen && (
                   <div className="px-4 pb-4 border-t border-white/10 pt-4 space-y-4">
 
+                    {/* Calificación */}
+                    {(entrada.calificacion ?? 0) > 0 && (
+                      <div>
+                        <p className="text-ocean-400 text-xs font-semibold uppercase mb-1">Calificación</p>
+                        <div className="flex items-center gap-2">
+                          {renderEstrellas(entrada.calificacion!, 'text-2xl')}
+                          <span className="text-ocean-300 text-sm">{CAL_LABEL[entrada.calificacion!]}</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Capturas detalle */}
                     {(entrada.capturas?.length ?? 0) > 0 && (
                       <div>
@@ -535,10 +594,10 @@ export default function Bitacora() {
                                 <p className="text-white text-sm font-semibold">{c.especie_nombre ?? c.especie_id}</p>
                                 <div className="flex items-center gap-3 flex-wrap text-xs text-ocean-400 mt-0.5">
                                   {c.cantidad > 0 && <span>×{c.cantidad}</span>}
-                                  {c.peso_kg && <span>{c.peso_kg} kg prom.</span>}
+                                  {c.peso_kg  && <span>{c.peso_kg} kg prom.</span>}
                                   {c.talla_cm && <span>{c.talla_cm} cm</span>}
-                                  {c.tecnica && <span>🎣 {c.tecnica}</span>}
-                                  {c.senuelo && <span>🪝 {c.senuelo}</span>}
+                                  {c.tecnica  && <span>🎣 {c.tecnica}</span>}
+                                  {c.senuelo  && <span>🪝 {c.senuelo}</span>}
                                   {c.liberado && <span className="text-green-400">♻️ Liberado</span>}
                                 </div>
                               </div>

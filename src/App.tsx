@@ -5,6 +5,7 @@ import Fecha from '@/pages/Fecha'
 import Bitacora from '@/pages/Bitacora'
 import Especies from '@/pages/Especies'
 import Zonas from '@/pages/Zonas'
+import Reportes from '@/pages/Reportes'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="bitacora" element={<Bitacora />} />
         <Route path="especies" element={<Especies />} />
         <Route path="zonas" element={<Zonas />} />
+        <Route path="reportes" element={<Reportes />} />
       </Route>
     </Routes>
   )

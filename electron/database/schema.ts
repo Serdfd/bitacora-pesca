@@ -324,7 +324,8 @@ export function applySchema(db: Database) {
       viento         TEXT DEFAULT '',
       marea          TEXT DEFAULT '',
       fase_lunar     TEXT DEFAULT '',
-      notas          TEXT DEFAULT ''
+      notas          TEXT DEFAULT '',
+      calificacion INTEGER DEFAULT 0
     )
   `)
 

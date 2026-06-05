@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { useAppStore } from '@/store'
 
 const NAV_ITEMS = [
   { to: '/',          icono: '🌅', label: 'Hoy'       },
@@ -7,11 +8,15 @@ const NAV_ITEMS = [
   { to: '/bitacora',  icono: '📖', label: 'Bitácora'  },
   { to: '/especies',  icono: '🐟', label: 'Especies'  },
   { to: '/zonas',     icono: '🗺️', label: 'Zonas'     },
+  { to: '/reportes', icono: '📊', label: 'Reportes' },
 ]
 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
+
+  const { regiones, zonaSeleccionadaId } = useAppStore()
+  const zonaActual = regiones.find(r => r.id === zonaSeleccionadaId) ?? regiones.find(r => r.lat && r.lat !== 0)
 
   const paginaActual = NAV_ITEMS.find(n => n.to === location.pathname)?.label ?? 'Bitácora de Pesca'
 
@@ -108,7 +113,7 @@ export default function Layout() {
         ">
           <h1 className="text-lg font-semibold text-white">{paginaActual}</h1>
           <div className="flex items-center gap-3 text-sm text-ocean-300">
-            <span>🌍 Puerto Escondido, Colombia</span>
+            <span>🌍 {zonaActual?.nombre ?? 'Sin zona seleccionada'}, Colombia</span>
             <span className="text-ocean-600">|</span>
             <span>{new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>

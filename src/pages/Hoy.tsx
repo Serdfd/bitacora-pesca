@@ -9,7 +9,7 @@ import GraficaMareas from '@/components/GraficaMareas'
 let SunCalc: any = null
 try { SunCalc = require('suncalc') } catch {}
 
-const ZONA_DEFAULT = 'puerto_escondido'
+const ZONA_DEFAULT = ''
 const STORAGE_KEY  = 'hoy_zona_seleccionada'
 
 function getSolTiempos(fecha: Date, lat: number, lon: number): { amanecer: Date; atardecer: Date } {
@@ -84,12 +84,9 @@ function SectionTitle({ icono, titulo }: { icono: string; titulo: string }) {
 }
 
 export default function Hoy() {
-  const { especies, regiones, loadAll } = useAppStore()
-
-  // Zona seleccionada — persiste en localStorage
-  const [zonaId, setZonaId] = useState<string>(
-    () => localStorage.getItem(STORAGE_KEY) ?? ZONA_DEFAULT
-  )
+  const { especies, regiones, loadAll, zonaSeleccionadaId, setZonaSeleccionada } = useAppStore()
+  const zonaId    = zonaSeleccionadaId
+  const setZonaId = setZonaSeleccionada
 
   const [clima, setClima]       = useState<DatosClimaticos | null>(null)
   const [senales, setSenales]   = useState<SenalAgua[]>([])
@@ -119,12 +116,21 @@ export default function Hoy() {
     if (especies.length === 0 || regiones.length === 0) loadAll()
   }, [])
 
+  // Auto-seleccionar la primera zona con coordenadas si no hay ninguna válida
+    useEffect(() => {
+      if (regiones.length === 0) return
+      const zonaValida = regiones.find(r => r.id === zonaId && r.lat && r.lat !== 0)
+      if (!zonaValida) {
+        const primera = regiones.find(r => r.lat && r.lat !== 0 && r.lon && r.lon !== 0)
+        if (primera) setZonaId(primera.id)
+      }
+    }, [regiones.length])
+
   useEffect(() => {
     // Si la zona seleccionada no tiene coords aún (regiones no cargadas), esperar
     if (regiones.length === 0) return
 
     setCargando(true)
-    localStorage.setItem(STORAGE_KEY, zonaId)
 
     getDatosClimaticos(hoy, coords.lat, coords.lon).then(d => {
       setClima(d)
@@ -281,6 +287,9 @@ export default function Hoy() {
           <div className="border-t border-white/10 pt-3 mt-2">
             <p className="text-ocean-400 text-xs font-semibold mb-2">MAREAS DEL DÍA</p>
             <GraficaMareas fecha={hoy} />
+            <p className="text-ocean-600 text-xs mt-2 text-center">
+              📊 Estimado armónico — Caribe colombiano
+            </p>
           </div>
         </Card>
       </div>

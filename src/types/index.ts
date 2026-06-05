@@ -67,6 +67,7 @@ export interface EntradaBitacora {
   fase_lunar?: string
   notas?: string
   capturas?: Captura[]
+  calificacion?: number
 }
 
 declare global {
