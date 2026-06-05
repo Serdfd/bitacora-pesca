@@ -38,6 +38,34 @@ export function createRegion(
   return id
 }
 
+export function updateRegion(
+  db: Database,
+  id: string,
+  data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }
+) {
+  db.prepare(`
+    UPDATE regiones SET
+      nombre      = ?,
+      descripcion = ?,
+      estado      = ?,
+      lat         = ?,
+      lon         = ?
+    WHERE id = ?
+  `).run(
+    data.nombre ?? '',
+    data.descripcion ?? '',
+    data.estado ?? 'recomendado',
+    data.lat ?? 0,
+    data.lon ?? 0,
+    id,
+  )
+}
+
+export function deleteRegion(db: Database, id: string) {
+  db.prepare(`UPDATE regiones SET activo = 0 WHERE id = ?`).run(id)
+  db.prepare(`UPDATE spots SET activo = 0 WHERE region_id = ?`).run(id)
+}
+
 export function updateRegionEstado(db: Database, id: string, estado: string) {
   db.prepare(`UPDATE regiones SET estado = ? WHERE id = ?`).run(estado, id)
 }

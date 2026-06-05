@@ -51,8 +51,8 @@ function EstadoBadge({ estado }: { estado: string }) {
   )
 }
 
-function Input({ label, value, onChange, placeholder = '', className = '', hint = '' }: {
-  label: string; value: string; placeholder?: string; className?: string; hint?: string
+function Input({ label, value, onChange, placeholder = '', className = '' }: {
+  label: string; value: string; placeholder?: string; className?: string
   onChange: (v: string) => void
 }) {
   return (
@@ -64,7 +64,74 @@ function Input({ label, value, onChange, placeholder = '', className = '', hint 
         placeholder={placeholder}
         className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 transition-colors"
       />
-      {hint && <p className="text-ocean-600 text-xs">{hint}</p>}
+    </div>
+  )
+}
+
+// ── Form compartido de zona ───────────────────────────────────────────────────
+
+function FormZonaFields({ form, setF }: {
+  form: FormZona
+  setF: (k: keyof FormZona, v: string) => void
+}) {
+  return (
+    <div className="space-y-4">
+      <Input
+        label="Nombre *"
+        value={form.nombre}
+        onChange={v => setF('nombre', v)}
+        placeholder="Ej: Banco de los Salmones"
+      />
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Descripción</label>
+        <textarea
+          value={form.descripcion}
+          onChange={e => setF('descripcion', e.target.value)}
+          rows={3}
+          placeholder="Características, profundidad aproximada, cómo llegar..."
+          className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs text-ocean-400 font-medium">
+          Coordenadas GPS
+          <span className="text-ocean-600 font-normal ml-1">(necesarias para clima y mareas)</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Latitud"  value={form.lat} onChange={v => setF('lat', v)}  placeholder="Ej: 9.50"   />
+          <Input label="Longitud" value={form.lon} onChange={v => setF('lon', v)} placeholder="Ej: -75.90" />
+        </div>
+        <div className="flex items-start gap-2 bg-ocean-800/40 rounded-xl p-3 border border-white/10">
+          <span className="text-base flex-shrink-0">💡</span>
+          <p className="text-ocean-400 text-xs leading-relaxed">
+            En Google Maps haz clic derecho sobre el punto → copia las coordenadas.
+            Latitud es el primer número, longitud el segundo (negativo en Colombia).
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs text-ocean-400 font-medium">Estado</label>
+        <div className="grid grid-cols-2 gap-3">
+          {(['recomendado', 'explorado'] as const).map(est => (
+            <button
+              key={est}
+              onClick={() => setF('estado', est)}
+              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                form.estado === est
+                  ? est === 'explorado'
+                    ? 'bg-green-500/20 border-green-500/40 text-green-400'
+                    : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                  : 'bg-ocean-800/40 border-white/10 text-ocean-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {est === 'explorado' ? '✅ Explorado' : '🔍 Por explorar'}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -75,12 +142,10 @@ function ModalNuevaZona({ onClose, onGuardar }: {
   onClose: () => void
   onGuardar: (f: FormZona) => Promise<void>
 }) {
-  const [form, setForm]     = useState<FormZona>({ ...EMPTY_ZONA })
+  const [form, setForm]           = useState<FormZona>({ ...EMPTY_ZONA })
   const [guardando, setGuardando] = useState(false)
 
-  function setF(k: keyof FormZona, v: string) {
-    setForm(p => ({ ...p, [k]: v }))
-  }
+  function setF(k: keyof FormZona, v: string) { setForm(p => ({ ...p, [k]: v })) }
 
   async function guardar() {
     if (!form.nombre.trim()) { alert('El nombre de la zona es obligatorio.'); return }
@@ -100,79 +165,9 @@ function ModalNuevaZona({ onClose, onGuardar }: {
           <h2 className="text-white font-bold text-lg">🗺️ Nueva Zona</h2>
           <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
         </div>
-
-        <div className="p-5 space-y-4">
-
-          <Input
-            label="Nombre de la zona *"
-            value={form.nombre}
-            onChange={v => setF('nombre', v)}
-            placeholder="Ej: Banco de los Salmones"
-          />
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Descripción</label>
-            <textarea
-              value={form.descripcion}
-              onChange={e => setF('descripcion', e.target.value)}
-              rows={3}
-              placeholder="Características, profundidad aproximada, cómo llegar..."
-              className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors"
-            />
-          </div>
-
-          {/* Coordenadas */}
-          <div className="space-y-2">
-            <label className="text-xs text-ocean-400 font-medium">
-              Coordenadas GPS
-              <span className="text-ocean-600 font-normal ml-1">(necesarias para clima y mareas)</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Latitud"
-                value={form.lat}
-                onChange={v => setF('lat', v)}
-                placeholder="Ej: 9.50"
-              />
-              <Input
-                label="Longitud"
-                value={form.lon}
-                onChange={v => setF('lon', v)}
-                placeholder="Ej: -75.90"
-              />
-            </div>
-            <div className="flex items-start gap-2 bg-ocean-800/40 rounded-xl p-3 border border-white/10">
-              <span className="text-base flex-shrink-0">💡</span>
-              <p className="text-ocean-400 text-xs leading-relaxed">
-                En Google Maps haz clic derecho sobre el punto → copia las coordenadas.
-                Latitud es el primer número, longitud el segundo (negativo en Colombia).
-              </p>
-            </div>
-          </div>
-
-          {/* Estado inicial */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-ocean-400 font-medium">Estado inicial</label>
-            <div className="grid grid-cols-2 gap-3">
-              {(['recomendado', 'explorado'] as const).map(est => (
-                <button
-                  key={est}
-                  onClick={() => setF('estado', est)}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                    form.estado === est
-                      ? est === 'explorado'
-                        ? 'bg-green-500/20 border-green-500/40 text-green-400'
-                        : 'bg-amber-500/20 border-amber-500/40 text-amber-400'
-                      : 'bg-ocean-800/40 border-white/10 text-ocean-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {est === 'explorado' ? '✅ Explorado' : '🔍 Por explorar'}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="p-5">
+          <FormZonaFields form={form} setF={setF} />
         </div>
-
         <div className="flex justify-end gap-3 p-5 border-t border-white/10 sticky bottom-0 bg-ocean-900">
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
@@ -188,6 +183,63 @@ function ModalNuevaZona({ onClose, onGuardar }: {
   )
 }
 
+// ── Modal Editar Zona ─────────────────────────────────────────────────────────
+
+function ModalEditarZona({ zona, onClose, onGuardar }: {
+  zona: Region
+  onClose: () => void
+  onGuardar: (id: string, f: FormZona) => Promise<void>
+}) {
+  const [form, setForm] = useState<FormZona>({
+    nombre:      zona.nombre,
+    descripcion: zona.descripcion ?? '',
+    estado:      zona.estado ?? 'recomendado',
+    lat:         zona.lat ? String(zona.lat) : '',
+    lon:         zona.lon ? String(zona.lon) : '',
+  })
+  const [guardando, setGuardando] = useState(false)
+
+  function setF(k: keyof FormZona, v: string) { setForm(p => ({ ...p, [k]: v })) }
+
+  async function guardar() {
+    if (!form.nombre.trim()) { alert('El nombre es obligatorio.'); return }
+    if (form.lat && isNaN(parseFloat(form.lat))) { alert('Latitud inválida.'); return }
+    if (form.lon && isNaN(parseFloat(form.lon))) { alert('Longitud inválida.'); return }
+    setGuardando(true)
+    await onGuardar(zona.id, form)
+    setGuardando(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-ocean-900 border border-white/10 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-ocean-900 z-10">
+          <div>
+            <h2 className="text-white font-bold text-lg">✏️ Editar Zona</h2>
+            <p className="text-ocean-400 text-xs mt-0.5">{zona.nombre}</p>
+          </div>
+          <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
+        </div>
+        <div className="p-5">
+          <FormZonaFields form={form} setF={setF} />
+        </div>
+        <div className="flex justify-end gap-3 p-5 border-t border-white/10 sticky bottom-0 bg-ocean-900">
+          <button onClick={onClose}
+            className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
+            Cancelar
+          </button>
+          <button onClick={guardar} disabled={guardando}
+            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-ocean-950 font-bold text-sm transition-colors">
+            {guardando ? '⏳ Guardando...' : '💾 Guardar Cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Modal Nuevo Spot ──────────────────────────────────────────────────────────
 
 function ModalNuevoSpot({ zona, onClose, onGuardar }: {
@@ -195,12 +247,10 @@ function ModalNuevoSpot({ zona, onClose, onGuardar }: {
   onClose: () => void
   onGuardar: (regionId: string, spot: FormSpot) => Promise<void>
 }) {
-  const [form, setForm]     = useState<FormSpot>({ ...EMPTY_SPOT })
+  const [form, setForm]           = useState<FormSpot>({ ...EMPTY_SPOT })
   const [guardando, setGuardando] = useState(false)
 
-  function setF(k: keyof FormSpot, v: string) {
-    setForm(p => ({ ...p, [k]: v }))
-  }
+  function setF(k: keyof FormSpot, v: string) { setForm(p => ({ ...p, [k]: v })) }
 
   async function guardar() {
     if (!form.nombre.trim()) { alert('El nombre del spot es obligatorio.'); return }
@@ -221,14 +271,8 @@ function ModalNuevoSpot({ zona, onClose, onGuardar }: {
           </div>
           <button onClick={onClose} className="text-ocean-400 hover:text-white text-xl transition-colors">✕</button>
         </div>
-
         <div className="p-5 space-y-4">
-          <Input
-            label="Nombre del spot *"
-            value={form.nombre}
-            onChange={v => setF('nombre', v)}
-            placeholder="Ej: La Piedra del Faro"
-          />
+          <Input label="Nombre del spot *" value={form.nombre} onChange={v => setF('nombre', v)} placeholder="Ej: La Piedra del Faro" />
           <div className="flex flex-col gap-1">
             <label className="text-xs text-ocean-400 font-medium">Tipo de fondo / zona</label>
             <select value={form.tipo} onChange={e => setF('tipo', e.target.value)}
@@ -244,7 +288,6 @@ function ModalNuevoSpot({ zona, onClose, onGuardar }: {
               className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors" />
           </div>
         </div>
-
         <div className="flex justify-end gap-3 p-5 border-t border-white/10">
           <button onClick={onClose}
             className="px-4 py-2 rounded-xl border border-white/10 text-ocean-300 hover:text-white hover:bg-white/5 text-sm transition-colors">
@@ -279,13 +322,15 @@ function SpotCard({ spot }: { spot: Spot }) {
 
 // ── Card de Zona ──────────────────────────────────────────────────────────────
 
-function ZonaCard({ zona, onCambiarEstado, onNuevoSpot }: {
+function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar }: {
   zona: Region
   onCambiarEstado: (zona: Region) => void
-  onNuevoSpot: (zona: Region) => void
+  onNuevoSpot:     (zona: Region) => void
+  onEditar:        (zona: Region) => void
+  onEliminar:      (zona: Region) => void
 }) {
   const [expandida, setExpandida] = useState(false)
-  const totalSpots  = zona.spots?.length ?? 0
+  const totalSpots       = zona.spots?.length ?? 0
   const tieneCoordenadas = zona.lat && zona.lat !== 0 && zona.lon && zona.lon !== 0
 
   return (
@@ -309,35 +354,39 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot }: {
               🌐 {zona.lat!.toFixed(2)}°N, {Math.abs(zona.lon!).toFixed(2)}°W
             </span>
           ) : (
-            <span className="text-red-400/60">⚠️ Sin coordenadas — no aparecerá en selector de clima</span>
+            <span className="text-red-400/60">⚠️ Sin coordenadas</span>
           )}
         </div>
 
         {/* Acciones */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => onCambiarEstado(zona)}
+          <button onClick={() => onCambiarEstado(zona)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
               zona.estado === 'explorado'
                 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
                 : 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
-            }`}
-          >
+            }`}>
             {zona.estado === 'explorado' ? '🔍 Marcar por explorar' : '✅ Marcar como explorado'}
           </button>
 
-          <button
-            onClick={() => onNuevoSpot(zona)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-ocean-700/60 border border-white/10 text-ocean-300 hover:text-white hover:bg-ocean-600/60 transition-colors"
-          >
-            + Nuevo Spot
+          <button onClick={() => onNuevoSpot(zona)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-ocean-700/60 border border-white/10 text-ocean-300 hover:text-white hover:bg-ocean-600/60 transition-colors">
+            + Spot
+          </button>
+
+          <button onClick={() => onEditar(zona)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-ocean-700/60 border border-white/10 text-ocean-300 hover:text-white hover:bg-ocean-600/60 transition-colors">
+            ✏️ Editar
+          </button>
+
+          <button onClick={() => onEliminar(zona)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors">
+            🗑️ Eliminar
           </button>
 
           {totalSpots > 0 && (
-            <button
-              onClick={() => setExpandida(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-ocean-400 hover:text-white transition-colors ml-auto"
-            >
+            <button onClick={() => setExpandida(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-ocean-400 hover:text-white transition-colors ml-auto">
               {expandida ? '▲ Ocultar spots' : `▼ Ver ${totalSpots} spot${totalSpots !== 1 ? 's' : ''}`}
             </button>
           )}
@@ -358,8 +407,9 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot }: {
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default function Zonas() {
-  const { regiones, loadAll, addSpot, updateZona } = useAppStore()
+  const { regiones, loadAll, addSpot, updateZonaCompleta, deleteZona } = useAppStore()
   const [modalNuevaZona, setModalNuevaZona] = useState(false)
+  const [zonaEditando, setZonaEditando]     = useState<Region | null>(null)
   const [zonaParaSpot, setZonaParaSpot]     = useState<Region | null>(null)
   const [filtroEstado, setFiltroEstado]     = useState<'' | 'explorado' | 'recomendado'>('')
   const [busqueda, setBusqueda]             = useState('')
@@ -385,6 +435,21 @@ export default function Zonas() {
       lon:         form.lon ? parseFloat(form.lon) : undefined,
     })
     await loadAll()
+  }
+
+  async function guardarEdicionZona(id: string, form: FormZona) {
+    await updateZonaCompleta(id, {
+      nombre:      form.nombre,
+      descripcion: form.descripcion,
+      estado:      form.estado,
+      lat:         form.lat ? parseFloat(form.lat) : undefined,
+      lon:         form.lon ? parseFloat(form.lon) : undefined,
+    })
+  }
+
+  async function eliminarZona(zona: Region) {
+    if (!confirm(`¿Eliminar "${zona.nombre}" y todos sus spots? Esta acción no se puede deshacer.`)) return
+    await deleteZona(zona.id)
   }
 
   async function guardarNuevoSpot(regionId: string, form: FormSpot) {
@@ -436,9 +501,9 @@ export default function Zonas() {
         </div>
         <div className="flex rounded-xl border border-white/10 overflow-hidden">
           {([
-            { value: '',            label: 'Todas'          },
-            { value: 'explorado',   label: '✅ Exploradas'  },
-            { value: 'recomendado', label: '🔍 Por explorar'},
+            { value: '',            label: 'Todas'           },
+            { value: 'explorado',   label: '✅ Exploradas'   },
+            { value: 'recomendado', label: '🔍 Por explorar' },
           ] as const).map(f => (
             <button key={f.value} onClick={() => setFiltroEstado(f.value)}
               className={`px-3 py-2 text-xs font-semibold transition-colors ${
@@ -470,18 +535,35 @@ export default function Zonas() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {regionesFiltradas.map(zona => (
-            <ZonaCard key={zona.id} zona={zona}
+            <ZonaCard
+              key={zona.id}
+              zona={zona}
               onCambiarEstado={cambiarEstado}
-              onNuevoSpot={z => setZonaParaSpot(z)} />
+              onNuevoSpot={z => setZonaParaSpot(z)}
+              onEditar={z => setZonaEditando(z)}
+              onEliminar={eliminarZona}
+            />
           ))}
         </div>
       )}
 
+      {/* Modales */}
       {modalNuevaZona && (
         <ModalNuevaZona onClose={() => setModalNuevaZona(false)} onGuardar={guardarNuevaZona} />
       )}
+      {zonaEditando && (
+        <ModalEditarZona
+          zona={zonaEditando}
+          onClose={() => setZonaEditando(null)}
+          onGuardar={guardarEdicionZona}
+        />
+      )}
       {zonaParaSpot && (
-        <ModalNuevoSpot zona={zonaParaSpot} onClose={() => setZonaParaSpot(null)} onGuardar={guardarNuevoSpot} />
+        <ModalNuevoSpot
+          zona={zonaParaSpot}
+          onClose={() => setZonaParaSpot(null)}
+          onGuardar={guardarNuevoSpot}
+        />
       )}
     </div>
   )

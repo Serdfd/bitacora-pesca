@@ -95,6 +95,8 @@ declare global {
           id: string; region_id: string; nombre: string
           tipo?: string; recomendaciones?: string
         }) => Promise<void>
+        update: (id: string, data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }) => Promise<void>
+        delete: (id: string) => Promise<void>
       }
       especies: {
         getAll:      ()                               => Promise<Especie[]>

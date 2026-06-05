@@ -19,6 +19,8 @@ interface AppState {
   addZona:       (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
   updateZona:    (id: string, estado: string)              => Promise<void>
   addSpot:       (spot: Omit<Spot, 'activo'>)              => Promise<void>
+  updateZonaCompleta: (id: string, data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }) => Promise<void>
+  deleteZona:         (id: string) => Promise<void>
 
   // Actions — especies
   addEspecie:    (e: Especie)                              => Promise<void>
@@ -108,6 +110,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  updateZonaCompleta: async (id, data) => {
+    try {
+      await window.electronAPI.regiones.update(id, data)
+      const regiones = await window.electronAPI.regiones.getAll()
+      set({ regiones })
+    } catch (err) {
+      console.error('Error actualizando zona:', err)
+      throw err
+    }
+  },
+
+  deleteZona: async (id) => {
+    try {
+      await window.electronAPI.regiones.delete(id)
+      set(s => ({ regiones: s.regiones.filter(r => r.id !== id) }))
+    } catch (err) {
+      console.error('Error eliminando zona:', err)
+      throw err
+    }
+  },
+
   addSpot: async (spot) => {
     try {
       await window.electronAPI.regiones.createSpot(spot)
@@ -118,6 +141,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       throw err
     }
   },
+  
+
 
   // ── Especies ────────────────────────────────────────────────────────────────
 
