@@ -91,3 +91,7 @@ export function createSpot(
     spot.recomendaciones ?? '',
   )
 }
+
+export function deleteSpot(db: Database, id: string) {
+  db.prepare(`UPDATE spots SET activo = 0 WHERE id = ?`).run(id)
+}

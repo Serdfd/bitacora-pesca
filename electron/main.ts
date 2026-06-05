@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import Database from 'better-sqlite3'
 import { applySchema }       from './database/schema'
-import { getRegiones, createRegion, updateRegion, deleteRegion, updateRegionEstado, createSpot } from './database/queries/regiones'
+import { getRegiones, createRegion, updateRegion, deleteRegion, updateRegionEstado, createSpot, deleteSpot } from './database/queries/regiones'
 import { getEspecies, createEspecie, updateEspecie, deleteEspecie, saveImagenEspecie } from './database/queries/especies'
 import { getBitacora, createEntrada, updateEntrada, deleteEntrada }  from './database/queries/bitacora'
 
@@ -58,6 +58,7 @@ ipcMain.handle('regiones:updateEstado', (_e, id, estado) => updateRegionEstado(d
 ipcMain.handle('regiones:createSpot',   (_e, spot) => createSpot(db, spot))
 ipcMain.handle('regiones:update',  (_e, id, data) => updateRegion(db, id, data))
 ipcMain.handle('regiones:delete',  (_e, id) => deleteRegion(db, id))
+ipcMain.handle('regiones:deleteSpot', (_e, id) => deleteSpot(db, id))
 
 // ── IPC: Especies ─────────────────────────────────────────────────────────────
 ipcMain.handle('especies:getAll',   () => getEspecies(db))

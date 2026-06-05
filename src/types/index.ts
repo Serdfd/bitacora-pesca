@@ -97,6 +97,7 @@ declare global {
         }) => Promise<void>
         update: (id: string, data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }) => Promise<void>
         delete: (id: string) => Promise<void>
+        deleteSpot: (id: string) => Promise<void>
       }
       especies: {
         getAll:      ()                               => Promise<Especie[]>

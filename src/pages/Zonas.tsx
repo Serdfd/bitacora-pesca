@@ -305,7 +305,10 @@ function ModalNuevoSpot({ zona, onClose, onGuardar }: {
 
 // ── Card de Spot ──────────────────────────────────────────────────────────────
 
-function SpotCard({ spot }: { spot: Spot }) {
+function SpotCard({ spot, onEliminar }: {
+  spot: Spot
+  onEliminar: (spot: Spot) => void
+}) {
   return (
     <div className="flex items-start gap-3 bg-ocean-800/40 rounded-xl p-3 border border-white/10">
       <span className="text-xl mt-0.5">📍</span>
@@ -316,18 +319,25 @@ function SpotCard({ spot }: { spot: Spot }) {
           <p className="text-ocean-300 text-xs mt-1 leading-relaxed">{spot.recomendaciones}</p>
         )}
       </div>
+      <button
+        onClick={() => onEliminar(spot)}
+        className="flex-shrink-0 px-2 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors"
+      >
+        🗑️
+      </button>
     </div>
   )
 }
 
 // ── Card de Zona ──────────────────────────────────────────────────────────────
 
-function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar }: {
+function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, onEliminarSpot }: {
   zona: Region
   onCambiarEstado: (zona: Region) => void
   onNuevoSpot:     (zona: Region) => void
   onEditar:        (zona: Region) => void
   onEliminar:      (zona: Region) => void
+  onEliminarSpot:  (spot: Spot)   => void
 }) {
   const [expandida, setExpandida] = useState(false)
   const totalSpots       = zona.spots?.length ?? 0
@@ -396,7 +406,7 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar }: 
       {expandida && totalSpots > 0 && (
         <div className="px-5 pb-5 border-t border-white/10 pt-4 space-y-2">
           {zona.spots!.map(spot => (
-            <SpotCard key={spot.id} spot={spot} />
+            <SpotCard key={spot.id} spot={spot} onEliminar={onEliminarSpot} />
           ))}
         </div>
       )}
@@ -450,6 +460,12 @@ export default function Zonas() {
   async function eliminarZona(zona: Region) {
     if (!confirm(`¿Eliminar "${zona.nombre}" y todos sus spots? Esta acción no se puede deshacer.`)) return
     await deleteZona(zona.id)
+  }
+
+  async function eliminarSpot(spot: Spot) {
+    if (!confirm(`¿Eliminar el spot "${spot.nombre}"?`)) return
+    await window.electronAPI.regiones.deleteSpot(spot.id)
+    await loadAll()
   }
 
   async function guardarNuevoSpot(regionId: string, form: FormSpot) {
@@ -542,6 +558,7 @@ export default function Zonas() {
               onNuevoSpot={z => setZonaParaSpot(z)}
               onEditar={z => setZonaEditando(z)}
               onEliminar={eliminarZona}
+              onEliminarSpot={eliminarSpot}
             />
           ))}
         </div>

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createSpot:   (spot: any)                          => ipcRenderer.invoke('regiones:createSpot', spot),
     update:       (id: string, data: any)              => ipcRenderer.invoke('regiones:update', id, data),
     delete:       (id: string)                         => ipcRenderer.invoke('regiones:delete', id),
+    deleteSpot: (id: string) => ipcRenderer.invoke('regiones:deleteSpot', id),
   },
   especies: {
     getAll:      ()                            => ipcRenderer.invoke('especies:getAll'),
