@@ -21,7 +21,7 @@ const ESPECIES_SEED = [
   {
     id: 'sierra', nombre: 'Sierra', nombre_cientifico: 'Scomberomorus cavalla',
     descripcion: 'Pariente mayor del carite, más solitaria y con dientes letales. Una de las especies más buscadas del Caribe.',
-    luna_optima: 'creciente_creciente', profundidad_min: 0, profundidad_max: 200,
+    luna_optima: 'creciente', profundidad_min: 0, profundidad_max: 200,
     tecnicas: 'Trolling,Spinning',
     cebos: 'Cuchara grande,Madejas,Carnada viva',
     peso_promedio: '2–5 kg', peso_maximo: '38 kg',
@@ -117,7 +117,7 @@ const ESPECIES_SEED = [
   {
     id: 'pargo_cubera', nombre: 'Pargo Cubera', nombre_cientifico: 'Lutjanus cyanopterus',
     descripcion: 'El pargo más grande del Atlántico. Combatiente brutal y muy territorial.',
-    luna_optima: 'creciente_menguante', profundidad_min: 5, profundidad_max: 55,
+    luna_optima: 'menguante', profundidad_min: 5, profundidad_max: 55,
     tecnicas: 'Fondo profundo,Jigging pesado',
     cebos: 'Cangrejo,Pulpo,Carnada grande',
     peso_promedio: '5–15 kg', peso_maximo: '57 kg',
@@ -181,7 +181,7 @@ const ESPECIES_SEED = [
   {
     id: 'jurel', nombre: 'Jurel', nombre_cientifico: 'Caranx hippos',
     descripcion: 'Pez en cardumen, agresivo y veloz. Excelente para jigging vertical.',
-    luna_optima: 'creciente_creciente', profundidad_min: 0, profundidad_max: 80,
+    luna_optima: 'creciente', profundidad_min: 0, profundidad_max: 80,
     tecnicas: 'Jigging,Spinning,Trolling',
     cebos: 'Jig metálico,Vinilo,Carnada viva',
     peso_promedio: '2–6 kg', peso_maximo: '35 kg',
@@ -229,7 +229,7 @@ const ESPECIES_SEED = [
   {
     id: 'sabalo', nombre: 'Sábalo', nombre_cientifico: 'Megalops atlanticus',
     descripcion: 'El rey de la pesca deportiva. Sus saltos de hasta 3 metros son legendarios.',
-    luna_optima: 'creciente_creciente', profundidad_min: 0, profundidad_max: 30,
+    luna_optima: 'creciente', profundidad_min: 0, profundidad_max: 30,
     tecnicas: 'Spinning,Mosca,Curricán',
     cebos: 'Vinilo,Baitfish,Carnada viva',
     peso_promedio: '10–30 kg', peso_maximo: '161 kg',
@@ -241,22 +241,6 @@ const ESPECIES_SEED = [
     comportamiento: 'El pez más acrobático del Caribe. Salta repetidamente al picar, puede alcanzar 3 metros de altura. Prácticamente siempre se libera (poca calidad para comer).',
     colores_senuelos: 'Plateado,Natural/Transparente,Azul/Blanco',
     curiosidad: 'El rey de la pesca deportiva. Sus escamas plateadas gigantes son icónicas. Puede respirar aire atmosférico directamente.',
-  },
-  {
-    id: 'zapatero', nombre: 'Zapatero', nombre_cientifico: 'Oligoplites saurus',
-    descripcion: 'Pez costero pequeño pero muy combativo. Excelente para iniciarse en el spinning.',
-    luna_optima: 'creciente_creciente', profundidad_min: 0, profundidad_max: 10,
-    tecnicas: 'Spinning',
-    cebos: 'Pequeños vinilos,Cucharilla',
-    peso_promedio: '0.2–0.8 kg', peso_maximo: '3 kg',
-    talla_promedio: '20–35 cm', talla_maxima: '50 cm',
-    record_colombia: '~1.5 kg',
-    profundidad_detalle: '0–10 m',
-    habitat: 'Pelágico costero,Estuario',
-    temporada_alta: 'Todo el año',
-    comportamiento: 'Pez costero en cardúmenes. Muy agresivo para su tamaño. Ideal para pesca con señuelos pequeños.',
-    colores_senuelos: 'Plateado,Verde/Amarillo',
-    curiosidad: 'Sus espinas dorsales pueden clavarse — manejar con cuidado al desanzuelar.',
   },
 ]
 

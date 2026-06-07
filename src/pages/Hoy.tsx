@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
 import { getInfoLunar, getVentanasPesca, type VentanaPesca } from '@/utils/moon'
-import { getEstadoMarea, getMareasDia } from '@/utils/tides'
+import { getEstadoMarea } from '@/utils/tides'
 import { getDatosClimaticos, getSenalesAgua, type DatosClimaticos, type SenalAgua } from '@/utils/weather'
 import type { Especie } from '@/types'
 import GraficaMareas from '@/components/GraficaMareas'
 
 let SunCalc: any = null
 try { SunCalc = require('suncalc') } catch {}
-
-const ZONA_DEFAULT = ''
-const STORAGE_KEY  = 'hoy_zona_seleccionada'
 
 function getSolTiempos(fecha: Date, lat: number, lon: number): { amanecer: Date; atardecer: Date } {
   if (SunCalc) {
