@@ -1,16 +1,25 @@
-appId: com.almanaque.caribe
-productName: Almanaque Caribe
+appId: com.bitacora.pesca
+productName: Bitacora de Pesca
+
 directories:
   output: release
+  buildResources: assets
+
 files:
   - dist
   - dist-electron
   - "!node_modules/**/*"
+  - "!src/**/*"
+  - "!electron/**/*"
+  - "!*.ts"
+  - "!*.md"
+
 win:
-  target:
-    - target: nsis
-      arch: [x64]
   icon: assets/icon.ico
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+  target:
+    - target: portable
+      arch: [x64]
+
+asar: true
+asarUnpack:
+  - "**/*.node"

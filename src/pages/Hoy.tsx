@@ -5,18 +5,11 @@ import { getEstadoMarea } from '@/utils/tides'
 import { getDatosClimaticos, getSenalesAgua, type DatosClimaticos, type SenalAgua } from '@/utils/weather'
 import type { Especie } from '@/types'
 import GraficaMareas from '@/components/GraficaMareas'
+import SunCalc from 'suncalc'
 
-let SunCalc: any = null
-try { SunCalc = require('suncalc') } catch {}
-
-function getSolTiempos(fecha: Date, lat: number, lon: number): { amanecer: Date; atardecer: Date } {
-  if (SunCalc) {
-    const t = SunCalc.getTimes(fecha, lat, lon)
-    return { amanecer: t.sunrise, atardecer: t.sunset }
-  }
-  const am = new Date(fecha); am.setHours(5, 50, 0, 0)
-  const pm = new Date(fecha); pm.setHours(18, 10, 0, 0)
-  return { amanecer: am, atardecer: pm }
+function getSolTiempos(fecha: Date, lat: number, lon: number) {
+  const t = SunCalc.getTimes(fecha, lat, lon)
+  return { amanecer: t.sunrise, atardecer: t.sunset }
 }
 
 type CalificacionActividad = 'A+' | 'A' | 'B' | 'D'
