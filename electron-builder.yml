@@ -8,7 +8,8 @@ directories:
 files:
   - dist
   - dist-electron
-  - "!node_modules/**/*"
+  - node_modules/better-sqlite3/**/*
+  - "!node_modules/better-sqlite3/build/Release/*.pdb"
   - "!src/**/*"
   - "!electron/**/*"
   - "!*.ts"
@@ -23,3 +24,6 @@ win:
 asar: true
 asarUnpack:
   - "**/*.node"
+  - "node_modules/better-sqlite3/**/*"
+
+npmRebuild: true

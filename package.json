@@ -7,8 +7,9 @@
     "dev": "vite",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
     "build": "vite build",
-    "dist": "npm run build && electron-builder",
-    "preview": "vite preview"
+    "dist": "npm run build && electron-builder --config electron-builder.yml",
+    "preview": "vite preview",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "apexcharts": "^4.0.0",
