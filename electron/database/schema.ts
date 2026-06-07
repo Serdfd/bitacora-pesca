@@ -384,6 +384,7 @@ export function applySchema(db: Database) {
     { tabla: 'capturas', columna: 'liberado',            tipo: 'INTEGER DEFAULT 0' },
     { tabla: 'regiones', columna: 'lat',                 tipo: 'REAL DEFAULT 0' },
     { tabla: 'regiones', columna: 'lon',                 tipo: 'REAL DEFAULT 0' },
+    { tabla: 'bitacora', columna: 'calificacion', tipo: 'INTEGER DEFAULT 0' },
   ]
 
   for (const { tabla, columna, tipo } of migraciones) {

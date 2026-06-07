@@ -2,30 +2,25 @@ import { create } from 'zustand'
 import type { EntradaBitacora, Especie, Region, Spot } from '@/types'
 
 interface AppState {
-  // Data
   bitacora:  EntradaBitacora[]
   especies:  Especie[]
   regiones:  Region[]
 
-  // Actions — carga
   loadAll:   () => Promise<void>
 
-  // Actions — bitácora
   addEntrada:    (e: EntradaBitacora)                      => Promise<void>
   updateEntrada: (id: number, e: Partial<EntradaBitacora>) => Promise<void>
   deleteEntrada: (id: number)                              => Promise<void>
 
-  // Actions — zonas
-  addZona:       (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
-  updateZona:    (id: string, estado: string)              => Promise<void>
-  addSpot:       (spot: Omit<Spot, 'activo'>)              => Promise<void>
+  addZona:            (data: { nombre: string; descripcion?: string; estado?: string }) => Promise<void>
+  updateZona:         (id: string, estado: string)         => Promise<void>
+  addSpot:            (spot: Omit<Spot, 'activo'>)         => Promise<void>
   updateZonaCompleta: (id: string, data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }) => Promise<void>
-  deleteZona:         (id: string) => Promise<void>
+  deleteZona:         (id: string)                         => Promise<void>
 
-  // Actions — especies
-  addEspecie:    (e: Especie)                              => Promise<void>
+  addEspecie: (e: Especie) => Promise<void>
 
-  zonaSeleccionadaId: string
+  zonaSeleccionadaId:  string
   setZonaSeleccionada: (id: string) => void
 }
 
@@ -33,8 +28,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   bitacora: [],
   especies: [],
   regiones: [],
-
-  // ── Carga inicial ───────────────────────────────────────────────────────────
 
   loadAll: async () => {
     try {
@@ -49,13 +42,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // ── Bitácora ────────────────────────────────────────────────────────────────
-
   addEntrada: async (entrada) => {
     try {
       const id = await window.electronAPI.bitacora.create(entrada)
-      const nueva = { ...entrada, id }
-      set(s => ({ bitacora: [...s.bitacora, nueva] }))
+      set(s => ({ bitacora: [...s.bitacora, { ...entrada, id }] }))
     } catch (err) {
       console.error('Error guardando entrada:', err)
       throw err
@@ -65,11 +55,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateEntrada: async (id, datos) => {
     try {
       await window.electronAPI.bitacora.update(id, datos)
-      set(s => ({
-        bitacora: s.bitacora.map(e =>
-          e.id === id ? { ...e, ...datos } : e
-        ),
-      }))
+      // Recargar desde BD para tener capturas actualizadas correctamente
+      const bitacora = await window.electronAPI.bitacora.getAll()
+      set({ bitacora })
     } catch (err) {
       console.error('Error actualizando entrada:', err)
       throw err
@@ -86,13 +74,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // ── Zonas ───────────────────────────────────────────────────────────────────
-
   addZona: async (data) => {
     try {
       await window.electronAPI.regiones.create(data)
-      const regiones = await window.electronAPI.regiones.getAll()
-      set({ regiones })
+      set({ regiones: await window.electronAPI.regiones.getAll() })
     } catch (err) {
       console.error('Error creando zona:', err)
       throw err
@@ -116,8 +101,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   updateZonaCompleta: async (id, data) => {
     try {
       await window.electronAPI.regiones.update(id, data)
-      const regiones = await window.electronAPI.regiones.getAll()
-      set({ regiones })
+      set({ regiones: await window.electronAPI.regiones.getAll() })
     } catch (err) {
       console.error('Error actualizando zona:', err)
       throw err
@@ -137,8 +121,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   addSpot: async (spot) => {
     try {
       await window.electronAPI.regiones.createSpot(spot)
-      const regiones = await window.electronAPI.regiones.getAll()
-      set({ regiones })
+      set({ regiones: await window.electronAPI.regiones.getAll() })
     } catch (err) {
       console.error('Error creando spot:', err)
       throw err
@@ -151,13 +134,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ zonaSeleccionadaId: id })
   },
 
-  // ── Especies ────────────────────────────────────────────────────────────────
-
   addEspecie: async (especie) => {
     try {
       await window.electronAPI.especies.create(especie)
-      const especies = await window.electronAPI.especies.getAll()
-      set({ especies })
+      set({ especies: await window.electronAPI.especies.getAll() })
     } catch (err) {
       console.error('Error creando especie:', err)
       throw err
