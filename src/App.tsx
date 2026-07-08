@@ -6,6 +6,7 @@ import Bitacora from '@/pages/Bitacora'
 import Especies from '@/pages/Especies'
 import Zonas from '@/pages/Zonas'
 import Reportes from '@/pages/Reportes'
+import Consultar from '@/pages/Consultar'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="especies" element={<Especies />} />
         <Route path="zonas" element={<Zonas />} />
         <Route path="reportes" element={<Reportes />} />
+        <Route path="consultar" element={<Consultar />} />
       </Route>
     </Routes>
   )

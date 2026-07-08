@@ -1,17 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getInfoLunar, getVentanasPesca, edadLunaEnDias, getFaseLunar, type Calificacion } from '@/utils/moon'
 import { getEstadoMarea, getMareasDia } from '@/utils/tides'
 import GraficaMareas from '@/components/GraficaMareas'
+import { useAppStore } from '@/store'
+import type { EntradaBitacora } from '@/types'
 
 let SunCalc: any = null
 try { SunCalc = require('suncalc') } catch { /* fallback */ }
 
-const LAT = 9.5
-const LON = -75.9
-
-function getSolTiempos(fecha: Date): { amanecer: Date; atardecer: Date } {
+function getSolTiempos(fecha: Date, lat: number, lon: number): { amanecer: Date; atardecer: Date } {
   if (SunCalc) {
-    const t = SunCalc.getTimes(fecha, LAT, LON)
+    const t = SunCalc.getTimes(fecha, lat, lon)
     return { amanecer: t.sunrise, atardecer: t.sunset }
   }
   const am = new Date(fecha); am.setHours(5, 50, 0, 0)
@@ -89,9 +88,23 @@ function SectionTitle({ icono, titulo }: { icono: string; titulo: string }) {
 }
 
 export default function Fecha() {
+  const { bitacora, regiones, zonaSeleccionadaId, loadAll } = useAppStore()
+  const zonaActual = regiones.find(r => r.id === zonaSeleccionadaId) ?? regiones.find(r => r.lat && r.lat !== 0)
+  const coords = {
+    lat: zonaActual?.lat && zonaActual.lat !== 0 ? zonaActual.lat : 9.5,
+    lon: zonaActual?.lon && zonaActual.lon !== 0 ? zonaActual.lon : -75.9,
+  }
+
+  useEffect(() => { if (bitacora.length === 0 || regiones.length === 0) loadAll() }, [])
+
+  // Conjunto de fechas con salidas registradas para marcar en el calendario
+  const fechasConSalida = useMemo(() =>
+    new Set(bitacora.map(e => e.fecha)), [bitacora]
+  )
+
   const hoy = new Date()
-  const [anio, setAnio]       = useState(hoy.getFullYear())
-  const [mes, setMes]         = useState(hoy.getMonth())
+  const [anio, setAnio]         = useState(hoy.getFullYear())
+  const [mes, setMes]           = useState(hoy.getMonth())
   const [diaSelec, setDiaSelec] = useState<DiaMes | null>(null)
 
   const dias = getDiasMes(anio, mes)
@@ -208,6 +221,11 @@ export default function Fecha() {
                         {cal}
                       </span>
                     )}
+
+                    {/* Punto indicador de salida registrada */}
+                    {esMesActual && fechasConSalida.has(dia.fecha.toISOString().split('T')[0]) && (
+                      <div className="absolute bottom-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
+                    )}
                   </button>
                 )
               })}
@@ -230,7 +248,11 @@ export default function Fecha() {
         {/* ── Panel detalle día ── */}
         <div className="xl:col-span-1">
           {diaSelec ? (
-            <DetalleDia dia={diaSelec} />
+            <DetalleDia
+              dia={diaSelec}
+              coords={coords}
+              entradasDia={bitacora.filter(e => e.fecha === diaSelec.fecha.toISOString().split('T')[0])}
+            />
           ) : (
             <Card className="flex flex-col items-center justify-center text-center py-16">
               <span className="text-5xl mb-4">📅</span>
@@ -244,10 +266,14 @@ export default function Fecha() {
   )
 }
 
-function DetalleDia({ dia }: { dia: DiaMes }) {
+function DetalleDia({ dia, coords, entradasDia }: {
+  dia: DiaMes
+  coords: { lat: number; lon: number }
+  entradasDia: EntradaBitacora[]
+}) {
   const { fecha, lunar, esHoy } = dia
   const [expandRecom, setExpandRecom] = useState(false)
-  const { amanecer, atardecer } = getSolTiempos(fecha)
+  const { amanecer, atardecer } = getSolTiempos(fecha, coords.lat, coords.lon)
   const ventanas = getVentanasPesca(fecha, amanecer, atardecer)
   const marea = getEstadoMarea(new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12, 0))
   const mareasDia = getMareasDia(fecha)
@@ -351,6 +377,41 @@ function DetalleDia({ dia }: { dia: DiaMes }) {
         <SectionTitle icono="🌊" titulo="Mareas del Día" />
         <GraficaMareas fecha={fecha} />
       </Card>
+
+      {/* Salidas registradas ese día */}
+      {entradasDia.length > 0 && (
+        <Card>
+          <SectionTitle icono="📖" titulo={`Salidas registradas · ${entradasDia.length}`} />
+          <div className="space-y-2">
+            {entradasDia.map((e, i) => {
+              const totalCap = (e.capturas ?? []).reduce((s, c) => s + c.cantidad, 0)
+              return (
+                <div key={i} className="bg-ocean-800/40 rounded-xl px-3 py-2.5 border border-white/10">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-white text-sm font-semibold">{e.spot_nombre ?? e.spot_id}</p>
+                    {totalCap > 0 && (
+                      <span className="text-amber-400 font-bold text-sm">{totalCap} 🐟</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 text-xs text-ocean-400">
+                    {e.clima && <span>{e.clima}</span>}
+                    {e.estado_mar && <span>· {e.estado_mar}</span>}
+                    {e.hora_salida && <span>· ⏱️ {e.hora_salida}</span>}
+                    {(e.calificacion ?? 0) > 0 && (
+                      <span className="text-amber-400">{'★'.repeat(e.calificacion!)}</span>
+                    )}
+                  </div>
+                  {(e.capturas ?? []).length > 0 && (
+                    <p className="text-ocean-500 text-xs mt-1">
+                      {[...new Set(e.capturas!.map(c => c.especie_nombre ?? c.especie_id))].join(', ')}
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
     </div>
   )
 }

@@ -3,7 +3,8 @@ import type { Database } from 'better-sqlite3'
 export function getBitacora(db: Database) {
   const entradas = db.prepare(`
     SELECT id, fecha, region_id, spot_id, region_nombre, spot_nombre,
-           clima, viento, marea, fase_lunar, notas, calificacion
+           clima, viento, marea, fase_lunar, notas, calificacion,
+           hora_salida, hora_regreso, num_pescadores, estado_mar, claridad_agua
     FROM bitacora
     ORDER BY fecha DESC
   `).all() as any[]
@@ -27,20 +28,26 @@ export function createEntrada(db: Database, entrada: any): number {
   const result = db.prepare(`
     INSERT INTO bitacora
       (fecha, region_id, spot_id, region_nombre, spot_nombre,
-       clima, viento, marea, fase_lunar, notas, calificacion)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       clima, viento, marea, fase_lunar, notas, calificacion,
+       hora_salida, hora_regreso, num_pescadores, estado_mar, claridad_agua)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     entrada.fecha,
     entrada.region_id,
     entrada.spot_id,
-    entrada.region_nombre ?? '',
-    entrada.spot_nombre   ?? '',
-    entrada.clima         ?? '',
-    entrada.viento        ?? '',
-    entrada.marea         ?? '',
-    entrada.fase_lunar    ?? '',
-    entrada.notas         ?? '',
-    entrada.calificacion  ?? 0,
+    entrada.region_nombre  ?? '',
+    entrada.spot_nombre    ?? '',
+    entrada.clima          ?? '',
+    entrada.viento         ?? '',
+    entrada.marea          ?? '',
+    entrada.fase_lunar     ?? '',
+    entrada.notas          ?? '',
+    entrada.calificacion   ?? 0,
+    entrada.hora_salida    ?? '',
+    entrada.hora_regreso   ?? '',
+    entrada.num_pescadores ?? 1,
+    entrada.estado_mar     ?? '',
+    entrada.claridad_agua  ?? '',
   )
 
   const id = result.lastInsertRowid as number
@@ -51,28 +58,40 @@ export function createEntrada(db: Database, entrada: any): number {
 export function updateEntrada(db: Database, id: number, datos: any) {
   db.prepare(`
     UPDATE bitacora SET
-      fecha         = ?,
-      region_id     = ?,
-      spot_id       = ?,
-      region_nombre = ?,
-      spot_nombre   = ?,
-      clima         = ?,
-      marea         = ?,
-      fase_lunar    = ?,
-      notas         = ?,
-      calificacion  = ?
+      fecha          = ?,
+      region_id      = ?,
+      spot_id        = ?,
+      region_nombre  = ?,
+      spot_nombre    = ?,
+      clima          = ?,
+      viento         = ?,
+      marea          = ?,
+      fase_lunar     = ?,
+      notas          = ?,
+      calificacion   = ?,
+      hora_salida    = ?,
+      hora_regreso   = ?,
+      num_pescadores = ?,
+      estado_mar     = ?,
+      claridad_agua  = ?
     WHERE id = ?
   `).run(
-    datos.fecha         ?? '',
-    datos.region_id     ?? '',
-    datos.spot_id       ?? '',
-    datos.region_nombre ?? '',
-    datos.spot_nombre   ?? '',
-    datos.clima         ?? '',
-    datos.marea         ?? '',
-    datos.fase_lunar    ?? '',
-    datos.notas         ?? '',
-    datos.calificacion  ?? 0,
+    datos.fecha          ?? '',
+    datos.region_id      ?? '',
+    datos.spot_id        ?? '',
+    datos.region_nombre  ?? '',
+    datos.spot_nombre    ?? '',
+    datos.clima          ?? '',
+    datos.viento         ?? '',
+    datos.marea          ?? '',
+    datos.fase_lunar     ?? '',
+    datos.notas          ?? '',
+    datos.calificacion   ?? 0,
+    datos.hora_salida    ?? '',
+    datos.hora_regreso   ?? '',
+    datos.num_pescadores ?? 1,
+    datos.estado_mar     ?? '',
+    datos.claridad_agua  ?? '',
     id,
   )
 

@@ -76,9 +76,9 @@ function renderEstrellas(n: number) {
 
 /** Convierte una EntradaBitacora guardada de vuelta a FormData para editar */
 function entradaAForm(entrada: EntradaBitacora): FormData {
+  // Compatibilidad con entradas antiguas que serializaban estos campos en notas
   const notas = entrada.notas ?? ''
   const lineas = notas.split('\n')
-
   const extraer = (prefijo: string) =>
     lineas.find(l => l.startsWith(prefijo))?.replace(prefijo, '').trim() ?? ''
 
@@ -92,17 +92,17 @@ function entradaAForm(entrada: EntradaBitacora): FormData {
 
   return {
     fecha:          entrada.fecha,
-    hora_salida:    extraer('Salida:')   || '05:30',
-    hora_regreso:   extraer('Regreso:')  || '',
-    num_pescadores: parseInt(extraer('Pescadores:')) || 1,
+    hora_salida:    entrada.hora_salida    || extraer('Salida:')         || '05:30',
+    hora_regreso:   entrada.hora_regreso   || extraer('Regreso:')        || '',
+    num_pescadores: entrada.num_pescadores || parseInt(extraer('Pescadores:')) || 1,
     region_id:      entrada.region_id,
     spot_id:        entrada.spot_id,
-    clima:          entrada.clima        || 'Soleado',
-    estado_mar:     extraer('Estado del mar:') || 'Poco agitado',
-    claridad_agua:  extraer('Claridad:') || 'Clara',
-    marea_salida:   entrada.marea        || 'Subiendo',
-    fase_lunar:     entrada.fase_lunar   || '',
-    calificacion:   entrada.calificacion ?? 0,
+    clima:          entrada.clima          || 'Soleado',
+    estado_mar:     entrada.estado_mar     || extraer('Estado del mar:') || 'Poco agitado',
+    claridad_agua:  entrada.claridad_agua  || extraer('Claridad:')       || 'Clara',
+    marea_salida:   entrada.marea          || 'Subiendo',
+    fase_lunar:     entrada.fase_lunar     || '',
+    calificacion:   entrada.calificacion   ?? 0,
     notas:          notasLimpias,
     capturas: (entrada.capturas ?? []).map(c => {
       const partes = (c.senuelo ?? '').split(' — ')
@@ -277,14 +277,12 @@ export default function Bitacora() {
       marea:          form.marea_salida,
       fase_lunar:     faseAuto,
       calificacion:   form.calificacion,
-      notas: [
-        form.notas,
-        `Estado del mar: ${form.estado_mar}`,
-        `Claridad: ${form.claridad_agua}`,
-        form.hora_salida   ? `Salida: ${form.hora_salida}`             : '',
-        form.hora_regreso  ? `Regreso: ${form.hora_regreso}`           : '',
-        form.num_pescadores > 1 ? `Pescadores: ${form.num_pescadores}` : '',
-      ].filter(Boolean).join('\n'),
+      hora_salida:    form.hora_salida   || undefined,
+      hora_regreso:   form.hora_regreso  || undefined,
+      num_pescadores: form.num_pescadores,
+      estado_mar:     form.estado_mar    || undefined,
+      claridad_agua:  form.claridad_agua || undefined,
+      notas:          form.notas,
       capturas: form.capturas.map(c => ({
         especie_id:     c.especie_id,
         especie_nombre: c.especie_nombre,
@@ -601,15 +599,47 @@ export default function Bitacora() {
                       </div>
                     )}
 
+                    {/* Condiciones */}
+                    {(() => {
+                      const lineas = (entrada.notas ?? '').split('\n')
+                      const extr = (p: string) =>
+                        lineas.find(l => l.startsWith(p + ':'))?.replace(p + ':', '').trim() ?? ''
+                      const estadoMar  = entrada.estado_mar   || extr('Estado del mar')
+                      const claridad   = entrada.claridad_agua || extr('Claridad')
+                      const horaSal    = entrada.hora_salida   || extr('Salida')
+                      const horaReg    = entrada.hora_regreso  || extr('Regreso')
+                      const numPesc    = entrada.num_pescadores || parseInt(extr('Pescadores')) || 0
+                      const hay = estadoMar || claridad || horaSal || horaReg || numPesc > 1
+                      if (!hay) return null
+                      return (
+                        <div>
+                          <p className="text-ocean-400 text-xs font-semibold uppercase mb-2">Condiciones</p>
+                          <div className="flex flex-wrap gap-2">
+                            {horaSal  && <span className="px-2 py-1 rounded-lg bg-ocean-800/40 border border-white/10 text-ocean-300 text-xs">⏱️ Salida: {horaSal}</span>}
+                            {horaReg  && <span className="px-2 py-1 rounded-lg bg-ocean-800/40 border border-white/10 text-ocean-300 text-xs">⏱️ Regreso: {horaReg}</span>}
+                            {numPesc > 1 && <span className="px-2 py-1 rounded-lg bg-ocean-800/40 border border-white/10 text-ocean-300 text-xs">👥 {numPesc} pescadores</span>}
+                            {estadoMar && <span className="px-2 py-1 rounded-lg bg-ocean-800/40 border border-white/10 text-ocean-300 text-xs">🌊 {estadoMar}</span>}
+                            {claridad  && <span className="px-2 py-1 rounded-lg bg-ocean-800/40 border border-white/10 text-ocean-300 text-xs">👁️ Claridad: {claridad}</span>}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     {/* Notas */}
-                    {entrada.notas && (
-                      <div>
-                        <p className="text-ocean-400 text-xs font-semibold uppercase mb-1">Notas</p>
-                        <p className="text-ocean-200 text-sm whitespace-pre-line leading-relaxed bg-ocean-800/30 rounded-xl px-3 py-2">
-                          {entrada.notas}
-                        </p>
-                      </div>
-                    )}
+                    {(() => {
+                      const notasLimpias = (entrada.notas ?? '').split('\n').filter(l =>
+                        !l.startsWith('Estado del mar:') && !l.startsWith('Claridad:') &&
+                        !l.startsWith('Salida:') && !l.startsWith('Regreso:') && !l.startsWith('Pescadores:')
+                      ).join('\n').trim()
+                      return notasLimpias ? (
+                        <div>
+                          <p className="text-ocean-400 text-xs font-semibold uppercase mb-1">Notas</p>
+                          <p className="text-ocean-200 text-sm whitespace-pre-line leading-relaxed bg-ocean-800/30 rounded-xl px-3 py-2">
+                            {notasLimpias}
+                          </p>
+                        </div>
+                      ) : null
+                    })()}
 
                     {/* Acciones */}
                     <div className="flex justify-between items-center pt-1">

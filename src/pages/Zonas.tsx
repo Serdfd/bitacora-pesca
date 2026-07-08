@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '@/store'
-import type { Region, Spot } from '@/types'
+import type { Region, Spot, EntradaBitacora } from '@/types'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -16,10 +16,12 @@ interface FormSpot {
   nombre: string
   tipo: string
   recomendaciones: string
+  profundidad: string
+  deriva: string
 }
 
 const EMPTY_ZONA: FormZona = { nombre: '', descripcion: '', estado: 'recomendado', lat: '', lon: '' }
-const EMPTY_SPOT: FormSpot = { nombre: '', tipo: '', recomendaciones: '' }
+const EMPTY_SPOT: FormSpot = { nombre: '', tipo: '', recomendaciones: '', profundidad: '', deriva: '' }
 
 const TIPOS_SPOT = [
   'Arrecife de coral', 'Fondo rocoso', 'Fondo arenoso',
@@ -287,6 +289,10 @@ function ModalNuevoSpot({ zona, onClose, onGuardar }: {
               rows={3} placeholder="Técnicas que funcionan, horarios, precauciones..."
               className="bg-ocean-800/60 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-ocean-600 focus:outline-none focus:border-amber-500/50 resize-none transition-colors" />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Profundidad aprox." value={form.profundidad} onChange={v => setF('profundidad', v)} placeholder="Ej: 30–50 m" />
+            <Input label="Deriva / Corriente" value={form.deriva} onChange={v => setF('deriva', v)} placeholder="Ej: Moderada NE" />
+          </div>
         </div>
         <div className="flex justify-end gap-3 p-5 border-t border-white/10">
           <button onClick={onClose}
@@ -315,6 +321,14 @@ function SpotCard({ spot, onEliminar }: {
       <div className="flex-1 min-w-0">
         <p className="text-white text-sm font-semibold">{spot.nombre}</p>
         {spot.tipo && <p className="text-ocean-400 text-xs mt-0.5">{spot.tipo}</p>}
+        <div className="flex flex-wrap gap-3 mt-1">
+          {spot.profundidad && (
+            <span className="text-ocean-300 text-xs">⚓️ {spot.profundidad}</span>
+          )}
+          {spot.deriva && (
+            <span className="text-ocean-300 text-xs">🌊 Deriva: {spot.deriva}</span>
+          )}
+        </div>
         {spot.recomendaciones && (
           <p className="text-ocean-300 text-xs mt-1 leading-relaxed">{spot.recomendaciones}</p>
         )}
@@ -331,17 +345,22 @@ function SpotCard({ spot, onEliminar }: {
 
 // ── Card de Zona ──────────────────────────────────────────────────────────────
 
-function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, onEliminarSpot }: {
+function ZonaCard({ zona, entradasZona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, onEliminarSpot }: {
   zona: Region
+  entradasZona: EntradaBitacora[]
   onCambiarEstado: (zona: Region) => void
   onNuevoSpot:     (zona: Region) => void
   onEditar:        (zona: Region) => void
   onEliminar:      (zona: Region) => void
   onEliminarSpot:  (spot: Spot)   => void
 }) {
-  const [expandida, setExpandida] = useState(false)
+  const [expandida, setExpandida]       = useState(false)
+  const [verHistorial, setVerHistorial] = useState(false)
   const totalSpots       = zona.spots?.length ?? 0
   const tieneCoordenadas = zona.lat && zona.lat !== 0 && zona.lon && zona.lon !== 0
+  const totalCapturas    = entradasZona.reduce((s, e) =>
+    s + (e.capturas ?? []).reduce((ss, c) => ss + c.cantidad, 0), 0
+  )
 
   return (
     <Card className="overflow-hidden">
@@ -359,6 +378,12 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, on
         {/* Stats */}
         <div className="flex items-center gap-4 text-xs text-ocean-400 mb-4 flex-wrap">
           <span>📍 {totalSpots} spot{totalSpots !== 1 ? 's' : ''}</span>
+          {entradasZona.length > 0 && (
+            <span className="text-ocean-400">📖 {entradasZona.length} salida{entradasZona.length !== 1 ? 's' : ''}</span>
+          )}
+          {totalCapturas > 0 && (
+            <span className="text-ocean-400">🐟 {totalCapturas} capturas</span>
+          )}
           {tieneCoordenadas ? (
             <span className="text-ocean-500">
               🌐 {zona.lat!.toFixed(2)}°N, {Math.abs(zona.lon!).toFixed(2)}°W
@@ -400,6 +425,12 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, on
               {expandida ? '▲ Ocultar spots' : `▼ Ver ${totalSpots} spot${totalSpots !== 1 ? 's' : ''}`}
             </button>
           )}
+          {entradasZona.length > 0 && (
+            <button onClick={() => setVerHistorial(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-ocean-300 hover:text-white transition-colors">
+              {verHistorial ? '▲ Ocultar historial' : `📖 Historial (${entradasZona.length})`}
+            </button>
+          )}
         </div>
       </div>
 
@@ -410,6 +441,49 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, on
           ))}
         </div>
       )}
+
+      {verHistorial && entradasZona.length > 0 && (
+        <div className="px-5 pb-5 border-t border-white/10 pt-4">
+          <p className="text-ocean-400 text-xs font-semibold uppercase mb-3">📖 Últimas salidas en {zona.nombre}</p>
+          <div className="space-y-2">
+            {[...entradasZona]
+              .sort((a, b) => b.fecha.localeCompare(a.fecha))
+              .slice(0, 8)
+              .map((e, i) => {
+                const totalCap = (e.capturas ?? []).reduce((s, c) => s + c.cantidad, 0)
+                const especies = [...new Set((e.capturas ?? []).map(c => c.especie_nombre ?? c.especie_id ?? '').filter(Boolean))]
+                return (
+                  <div key={i} className="bg-ocean-800/40 rounded-xl px-3 py-2.5 border border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 font-bold text-sm">{e.fecha}</span>
+                        {e.spot_nombre && e.spot_nombre !== zona.nombre && (
+                          <span className="text-ocean-400 text-xs">· {e.spot_nombre}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(e.calificacion ?? 0) > 0 && (
+                          <span className="text-amber-400 text-xs">{'★'.repeat(e.calificacion!)}</span>
+                        )}
+                        {totalCap > 0 && (
+                          <span className="text-white font-bold text-sm">{totalCap} 🐟</span>
+                        )}
+                      </div>
+                    </div>
+                    {especies.length > 0 && (
+                      <p className="text-ocean-400 text-xs mt-1">{especies.join(', ')}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mt-1 text-xs text-ocean-500">
+                      {e.clima    && <span>{e.clima}</span>}
+                      {e.estado_mar && <span>· {e.estado_mar}</span>}
+                      {e.hora_salida && <span>· ⏱️ {e.hora_salida}</span>}
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
@@ -417,7 +491,7 @@ function ZonaCard({ zona, onCambiarEstado, onNuevoSpot, onEditar, onEliminar, on
 // ── Página principal ──────────────────────────────────────────────────────────
 
 export default function Zonas() {
-  const { regiones, loadAll, addSpot, updateZonaCompleta, deleteZona } = useAppStore()
+  const { regiones, bitacora, loadAll, addSpot, updateZonaCompleta, deleteZona } = useAppStore()
   const [modalNuevaZona, setModalNuevaZona] = useState(false)
   const [zonaEditando, setZonaEditando]     = useState<Region | null>(null)
   const [zonaParaSpot, setZonaParaSpot]     = useState<Region | null>(null)
@@ -473,8 +547,10 @@ export default function Zonas() {
       id:              `spot_${Date.now()}`,
       region_id:       regionId,
       nombre:          form.nombre,
-      tipo:            form.tipo || undefined,
+      tipo:            form.tipo            || undefined,
       recomendaciones: form.recomendaciones || undefined,
+      profundidad:     form.profundidad     || undefined,
+      deriva:          form.deriva          || undefined,
     })
   }
 
@@ -554,6 +630,7 @@ export default function Zonas() {
             <ZonaCard
               key={zona.id}
               zona={zona}
+              entradasZona={bitacora.filter(e => e.region_id === zona.id)}
               onCambiarEstado={cambiarEstado}
               onNuevoSpot={z => setZonaParaSpot(z)}
               onEditar={z => setZonaEditando(z)}

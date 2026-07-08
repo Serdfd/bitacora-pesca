@@ -368,7 +368,16 @@ export function applySchema(db: Database) {
     { tabla: 'capturas', columna: 'liberado',            tipo: 'INTEGER DEFAULT 0' },
     { tabla: 'regiones', columna: 'lat',                 tipo: 'REAL DEFAULT 0' },
     { tabla: 'regiones', columna: 'lon',                 tipo: 'REAL DEFAULT 0' },
-    { tabla: 'bitacora', columna: 'calificacion', tipo: 'INTEGER DEFAULT 0' },
+    { tabla: 'bitacora', columna: 'calificacion',   tipo: 'INTEGER DEFAULT 0' },
+    // v3 — campos propios en lugar de serializar en notas
+    { tabla: 'bitacora', columna: 'hora_salida',    tipo: "TEXT DEFAULT ''" },
+    { tabla: 'bitacora', columna: 'hora_regreso',   tipo: "TEXT DEFAULT ''" },
+    { tabla: 'bitacora', columna: 'num_pescadores', tipo: 'INTEGER DEFAULT 1' },
+    { tabla: 'bitacora', columna: 'estado_mar',     tipo: "TEXT DEFAULT ''" },
+    { tabla: 'bitacora', columna: 'claridad_agua',  tipo: "TEXT DEFAULT ''" },
+    // v3 — datos técnicos por spot
+    { tabla: 'spots',    columna: 'profundidad',    tipo: "TEXT DEFAULT ''" },
+    { tabla: 'spots',    columna: 'deriva',         tipo: "TEXT DEFAULT ''" },
   ]
 
   for (const { tabla, columna, tipo } of migraciones) {

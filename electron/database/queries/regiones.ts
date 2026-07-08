@@ -7,7 +7,7 @@ export function getRegiones(db: Database) {
   `).all() as any[]
 
   const spots = db.prepare(`
-    SELECT id, region_id, nombre, tipo, recomendaciones
+    SELECT id, region_id, nombre, tipo, recomendaciones, profundidad, deriva
     FROM spots WHERE activo = 1 ORDER BY nombre
   `).all() as any[]
 
@@ -78,17 +78,21 @@ export function createSpot(
     nombre: string
     tipo?: string
     recomendaciones?: string
+    profundidad?: string
+    deriva?: string
   }
 ) {
   db.prepare(`
-    INSERT INTO spots (id, region_id, nombre, tipo, recomendaciones, activo)
-    VALUES (?, ?, ?, ?, ?, 1)
+    INSERT INTO spots (id, region_id, nombre, tipo, recomendaciones, profundidad, deriva, activo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
   `).run(
     spot.id,
     spot.region_id,
     spot.nombre,
-    spot.tipo ?? '',
+    spot.tipo            ?? '',
     spot.recomendaciones ?? '',
+    spot.profundidad     ?? '',
+    spot.deriva          ?? '',
   )
 }
 

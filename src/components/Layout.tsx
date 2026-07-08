@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { useAppStore } from '@/store'
 
 const NAV_ITEMS = [
-  { to: '/',          icono: '🌅', label: 'Hoy'       },
-  { to: '/fecha',     icono: '📅', label: 'Fecha'     },
-  { to: '/bitacora',  icono: '📖', label: 'Bitácora'  },
-  { to: '/especies',  icono: '🐟', label: 'Especies'  },
-  { to: '/zonas',     icono: '🗺️', label: 'Zonas'     },
-  { to: '/reportes', icono: '📊', label: 'Reportes' },
+  { to: '/',          icono: '🌅', label: 'Hoy'        },
+  { to: '/fecha',     icono: '📅', label: 'Fecha'      },
+  { to: '/bitacora',  icono: '📖', label: 'Bitácora'   },
+  { to: '/especies',  icono: '🐟', label: 'Especies'   },
+  { to: '/zonas',     icono: '🗺️', label: 'Zonas'      },
+  { to: '/reportes',  icono: '📊', label: 'Reportes'   },
+  { to: '/consultar', icono: '🤖', label: 'Asistente'  },
 ]
 
 export default function Layout() {

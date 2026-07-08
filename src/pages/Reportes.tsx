@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import ReactApexChart from 'react-apexcharts'
 import { useAppStore } from '@/store'
 
@@ -52,25 +52,32 @@ const CAL_LABEL: Record<number, string> = {
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function Reportes() {
-  const { bitacora } = useAppStore()
+  const { bitacora, regiones } = useAppStore()
+  const [zonaFiltro, setZonaFiltro] = useState('')
+
+  // Datos filtrados por zona (o todos si no hay filtro)
+  const datos = useMemo(() =>
+    zonaFiltro ? bitacora.filter(e => e.region_id === zonaFiltro) : bitacora,
+    [bitacora, zonaFiltro]
+  )
 
   // ── Cálculos ────────────────────────────────────────────────────────────────
 
   const stats = useMemo(() => {
-    const totalSalidas   = bitacora.length
-    const totalCapturas  = bitacora.reduce((s, e) =>
+    const totalSalidas   = datos.length
+    const totalCapturas  = datos.reduce((s, e) =>
       s + (e.capturas ?? []).reduce((ss, c) => ss + c.cantidad, 0), 0)
     const promCapturas   = totalSalidas > 0
       ? Math.round((totalCapturas / totalSalidas) * 10) / 10 : 0
 
-    const calificadas = bitacora.filter(e => (e.calificacion ?? 0) > 0)
+    const calificadas = datos.filter(e => (e.calificacion ?? 0) > 0)
     const promCal = calificadas.length > 0
       ? Math.round((calificadas.reduce((s, e) => s + (e.calificacion ?? 0), 0) / calificadas.length) * 10) / 10
       : 0
 
     // Zona más visitada
     const zonaMap: Record<string, number> = {}
-    for (const e of bitacora) {
+    for (const e of datos) {
       const z = e.region_nombre ?? e.region_id ?? 'Sin zona'
       zonaMap[z] = (zonaMap[z] ?? 0) + 1
     }
@@ -78,7 +85,7 @@ export default function Reportes() {
 
     // Especie más capturada
     const especieMap: Record<string, number> = {}
-    for (const e of bitacora) {
+    for (const e of datos) {
       for (const c of e.capturas ?? []) {
         const n = c.especie_nombre ?? c.especie_id ?? 'Sin especie'
         especieMap[n] = (especieMap[n] ?? 0) + c.cantidad
@@ -87,33 +94,33 @@ export default function Reportes() {
     const especieMasCapturada = Object.entries(especieMap).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—'
 
     return { totalSalidas, totalCapturas, promCapturas, promCal, zonaMasVisitada, especieMasCapturada }
-  }, [bitacora])
+  }, [datos])
 
   // Top especies
   const porEspecie = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora)
+    for (const e of datos)
       for (const c of e.capturas ?? []) {
         const n = c.especie_nombre ?? c.especie_id ?? 'Sin especie'
         mapa[n] = (mapa[n] ?? 0) + c.cantidad
       }
     return Object.entries(mapa).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [bitacora])
+  }, [datos])
 
   // Salidas por mes
   const porMes = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora) {
+    for (const e of datos) {
       const mes = e.fecha?.slice(0, 7) ?? ''
       if (mes) mapa[mes] = (mapa[mes] ?? 0) + 1
     }
     return Object.entries(mapa).sort()
-  }, [bitacora])
+  }, [datos])
 
   // Capturas por fase lunar
   const porFase = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora) {
+    for (const e of datos) {
       const fase = e.fase_lunar
       if (!fase) continue
       const label = FASE_NOMBRES[fase] ?? fase
@@ -122,58 +129,58 @@ export default function Reportes() {
     }
     const entradas = Object.entries(mapa).filter(([, v]) => v > 0)
     return { labels: entradas.map(([k]) => k), values: entradas.map(([, v]) => v) }
-  }, [bitacora])
+  }, [datos])
 
   // Top zonas
   const porZona = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora) {
+    for (const e of datos) {
       const z = e.region_nombre ?? e.region_id ?? 'Sin zona'
       const total = (e.capturas ?? []).reduce((s, c) => s + c.cantidad, 0)
       mapa[z] = (mapa[z] ?? 0) + total
     }
     return Object.entries(mapa).sort((a, b) => b[1] - a[1]).slice(0, 6)
-  }, [bitacora])
+  }, [datos])
 
   // Señuelos más efectivos
   const porSenuelo = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora)
+    for (const e of datos)
       for (const c of e.capturas ?? []) {
         if (!c.senuelo) continue
-        const s = c.senuelo.split(' — ')[0] // quitar color
+        const s = c.senuelo.split(' — ')[0]
         mapa[s] = (mapa[s] ?? 0) + c.cantidad
       }
     return Object.entries(mapa).sort((a, b) => b[1] - a[1]).slice(0, 8)
-  }, [bitacora])
+  }, [datos])
 
   // Técnicas más usadas
   const porTecnica = useMemo(() => {
     const mapa: Record<string, number> = {}
-    for (const e of bitacora)
+    for (const e of datos)
       for (const c of e.capturas ?? []) {
         if (!c.tecnica) continue
         mapa[c.tecnica] = (mapa[c.tecnica] ?? 0) + c.cantidad
       }
     const entradas = Object.entries(mapa).filter(([, v]) => v > 0)
     return { labels: entradas.map(([k]) => k), values: entradas.map(([, v]) => v) }
-  }, [bitacora])
+  }, [datos])
 
   // Mejores salidas (top 5 por capturas)
   const mejoresSalidas = useMemo(() => {
-    return [...bitacora]
+    return [...datos]
       .map(e => ({
         ...e,
         totalCap: (e.capturas ?? []).reduce((s, c) => s + c.cantidad, 0),
       }))
       .sort((a, b) => b.totalCap - a.totalCap)
       .slice(0, 5)
-  }, [bitacora])
+  }, [datos])
 
   // Récords por especie
   const records = useMemo(() => {
     const mapa: Record<string, { peso: number; talla: number }> = {}
-    for (const e of bitacora)
+    for (const e of datos)
       for (const c of e.capturas ?? []) {
         const n = c.especie_nombre ?? c.especie_id ?? 'Sin especie'
         if (!mapa[n]) mapa[n] = { peso: 0, talla: 0 }
@@ -183,7 +190,7 @@ export default function Reportes() {
     return Object.entries(mapa)
       .filter(([, v]) => v.peso > 0 || v.talla > 0)
       .sort((a, b) => b[1].peso - a[1].peso)
-  }, [bitacora])
+  }, [datos])
 
   // ── Empty state ─────────────────────────────────────────────────────────────
 
@@ -201,6 +208,49 @@ export default function Reportes() {
 
   return (
     <div className="space-y-6">
+
+      {/* ── Filtro de zona ── */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-ocean-400 text-sm font-medium">🗺️ Filtrar por zona:</span>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setZonaFiltro('')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              zonaFiltro === ''
+                ? 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                : 'bg-ocean-800/60 border-white/10 text-ocean-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            Todas ({bitacora.length})
+          </button>
+          {regiones
+            .filter(r => bitacora.some(e => e.region_id === r.id))
+            .map(r => {
+              const n = bitacora.filter(e => e.region_id === r.id).length
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setZonaFiltro(zonaFiltro === r.id ? '' : r.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                    zonaFiltro === r.id
+                      ? 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                      : 'bg-ocean-800/60 border-white/10 text-ocean-300 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {r.nombre} ({n})
+                </button>
+              )
+            })
+          }
+        </div>
+      </div>
+
+      {datos.length === 0 && (
+        <Card className="p-10 text-center">
+          <p className="text-3xl mb-2">🔍</p>
+          <p className="text-ocean-400 text-sm">Sin salidas registradas en esta zona.</p>
+        </Card>
+      )}
 
       {/* ── Tarjetas resumen ── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

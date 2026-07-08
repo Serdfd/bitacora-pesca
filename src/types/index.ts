@@ -4,6 +4,8 @@ export interface Spot {
   nombre: string
   tipo?: string
   recomendaciones?: string
+  profundidad?: string
+  deriva?: string
   activo?: boolean
 }
 
@@ -68,6 +70,11 @@ export interface EntradaBitacora {
   notas?: string
   capturas?: Captura[]
   calificacion?: number
+  hora_salida?: string
+  hora_regreso?: string
+  num_pescadores?: number
+  estado_mar?: string
+  claridad_agua?: string
 }
 
 declare global {
@@ -94,7 +101,7 @@ declare global {
         updateEstado: (id: string, estado: string)                              => Promise<void>
         createSpot:   (spot: {
           id: string; region_id: string; nombre: string
-          tipo?: string; recomendaciones?: string
+          tipo?: string; recomendaciones?: string; profundidad?: string; deriva?: string
         }) => Promise<void>
         update: (id: string, data: { nombre?: string; descripcion?: string; estado?: string; lat?: number; lon?: number }) => Promise<void>
         delete: (id: string) => Promise<void>
